@@ -1,6 +1,6 @@
-#include <io.h>
+#include "engine.hpp"
 
 int main(int argcc, char* argv[]) {
 
-	return 0;
+	return Engine::getInstance()->run();
 }
