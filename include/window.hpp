@@ -9,6 +9,7 @@ public:
 	Window(const std::string& caption);
 	virtual ~Window();
 	SDL_Window* getWindow() { return _window; }
+	SDL_Surface* getWindowSurface() { return SDL_GetWindowSurface(_window); }
 private:
 	SDL_Window* _window;
 	float _screenWidth = 1280.f;

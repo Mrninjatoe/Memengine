@@ -7,9 +7,10 @@ class Renderer {
 public:
 	Renderer(SDL_Window* window);
 	virtual ~Renderer();
+private:
+	SDL_GLContext _context;
 
-
-	static void APIENTRY openglCallbackFunction(
+	static void APIENTRY _openglCallbackFunction(
 		GLenum source,
 		GLenum type,
 		GLuint id,
@@ -22,12 +23,10 @@ public:
 		(void)severity; (void)length; (void)userParam;
 		fprintf(stderr, "%s\n", message);
 
-		printf("%s, ");
+		//printf("%s, ", message);
 		if (severity == GL_DEBUG_SEVERITY_HIGH) {
 			fprintf(stderr, "Aborting...\n");
 			//abort();
 		}
 	}
-private:
-	SDL_GLContext _context;
 };
