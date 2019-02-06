@@ -82,3 +82,29 @@ Mesh MeshLoader::_processMesh(aiMesh* mesh, const aiScene* scene) {
 		
 	return newMesh;
 }
+
+std::shared_ptr<Model> MeshLoader::getTriangleMesh() {
+	auto triangleAlreadyExists = _models.count("triangle");
+	if (triangleAlreadyExists)
+		return _models["triangle"];
+	
+	_models["triangle"] = std::make_shared<Model>();
+
+	std::vector<Mesh::Vertex> vertices;
+	std::vector<unsigned int> indices;
+
+	vertices = {
+		Mesh::Vertex{glm::vec3(-0.5f,-0.5f,0), glm::vec3(0,0,1), glm::vec3(1,0,0), glm::vec2(0,0)},
+		Mesh::Vertex{glm::vec3(-0.5f,0.5f,0), glm::vec3(0,0,1), glm::vec3(0,1,0), glm::vec2(0,1)},
+		Mesh::Vertex{glm::vec3(0.5f,0.5f,0), glm::vec3(0,0,1), glm::vec3(0,0,1), glm::vec2(1,1)},
+		Mesh::Vertex{glm::vec3(0.5f,-0.5f,0), glm::vec3(0,0,1), glm::vec3(0,0,1), glm::vec2(1,0)}
+	};
+	indices = {
+		0, 1, 3,
+		1, 2, 3
+	};
+
+	_models["triangle"]->addMesh(Mesh(vertices, indices));
+
+	return _models["triangle"];
+}

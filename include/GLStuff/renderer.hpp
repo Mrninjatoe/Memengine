@@ -2,11 +2,14 @@
 #include <glad/glad.h>
 #include <stdio.h>
 #include "window.hpp"
+#include "model.hpp"
+#include "shaderprogram.hpp"
 
 class Renderer {
 public:
 	Renderer(SDL_Window* window);
 	virtual ~Renderer();
+	void render(const std::shared_ptr<Model>& model, const std::shared_ptr<ShaderProgram>& shader);
 private:
 	SDL_GLContext _context;
 
@@ -26,7 +29,7 @@ private:
 		//printf("%s, ", message);
 		if (severity == GL_DEBUG_SEVERITY_HIGH) {
 			fprintf(stderr, "Aborting...\n");
-			//abort();
+			abort();
 		}
 	}
 };

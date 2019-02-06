@@ -33,10 +33,6 @@ ShaderProgram& ShaderProgram::attachShader(GLenum type, const std::string& path)
 	return *this;
 }
 
-void ShaderProgram::useProgram() {
-	glUseProgram(_program);
-}
-
 void ShaderProgram::finalize() {
 	glLinkProgram(_program);
 	GLint result;
@@ -47,4 +43,8 @@ void ShaderProgram::finalize() {
 		fprintf(stderr, "Linking program failed:\n%s\n", msg);
 		abort();
 	}
+}
+
+void ShaderProgram::useProgram() {
+	glUseProgram(_program);
 }

@@ -2,6 +2,7 @@
 #include <string>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <glm/vec2.hpp>
 #undef main
 
 class Window {
@@ -10,10 +11,12 @@ public:
 	virtual ~Window();
 	SDL_Window* getWindow() { return _window; }
 	SDL_Surface* getWindowSurface() { return SDL_GetWindowSurface(_window); }
+	glm::ivec2 getSize() { return glm::ivec2(_screenWidth, _screenHeight); }
+
 private:
 	SDL_Window* _window;
-	float _screenWidth = 1280.f;
-	float _screenHeight = 720.f;
+	int _screenWidth = 1280;
+	int _screenHeight = 720;
 	bool _fullscreen = false;
 
 };

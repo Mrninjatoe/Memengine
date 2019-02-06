@@ -4,7 +4,7 @@ Renderer::Renderer(SDL_Window* window){
 	// Request an OpenGL 4.4 Core context
 	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 4);
 	// Also request a depth buffer
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
@@ -43,4 +43,17 @@ Renderer::Renderer(SDL_Window* window){
 
 Renderer::~Renderer() {
 	
+}
+
+void Renderer::render(const std::shared_ptr<Model>& model, const std::shared_ptr<ShaderProgram>& shader) {
+	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	//shader->useProgram();
+
+	for (auto mesh : model->getMeshes()) {
+		glBindVertexArray(mesh.getVAO());
+		glDrawElements(GL_TRIANGLES, mesh.getIndices().size(), GL_UNSIGNED_INT, nullptr);
+		glBindVertexArray(0);
+	}
 }

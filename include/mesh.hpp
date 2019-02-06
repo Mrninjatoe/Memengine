@@ -22,6 +22,11 @@ public:
 	Mesh() {}; // Not used but just defined.
 	Mesh(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices);
 	virtual ~Mesh();
+
+	GLuint& getVAO() { return _vao; }
+	std::vector<unsigned int>& getIndices() { return _indices; }
+	std::vector<Vertex>& getVertices() { return _vertices; }
+
 private:
 	GLuint _vao, _vbo, _ebo;
 	std::vector<Vertex> _vertices;

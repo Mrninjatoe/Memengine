@@ -5,7 +5,8 @@ class Model {
 public:
 	Model();
 	virtual ~Model();
-	void addMesh(const Mesh& mesh);
+	Model& addMesh(const Mesh& mesh);
+	std::vector<Mesh>& getMeshes() { return _meshes; }
 private:
 	std::vector<Mesh> _meshes;
 };

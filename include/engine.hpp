@@ -5,6 +5,7 @@
 #include "shaderprogram.hpp"
 #include "meshloader.hpp"
 #include "textureloader.hpp"
+#include "camera.hpp"
 
 class Engine {
 	public:
@@ -20,7 +21,7 @@ class Engine {
 			return _instance;
 		}
 		int run();
-		Window* getScreen() { return _window.get(); }
+		Window* getWindow() { return _window.get(); }
 		Renderer* getRenderer() { return _renderer.get(); }
 		MeshLoader* getMeshLoader() { return _meshLoader.get(); }
 	private:
@@ -32,6 +33,13 @@ class Engine {
 		std::unique_ptr<Window> _window;
 		std::unique_ptr<Renderer> _renderer;
 		std::unique_ptr<MeshLoader> _meshLoader;
+		std::unique_ptr<TextureLoader> _textureLoader;
 
+
+		std::shared_ptr<Texture> _cannonTexture;
 		std::shared_ptr<ShaderProgram> _normalShader;
+
+		std::vector<std::shared_ptr<Model>> _models;
+
+		std::shared_ptr<Camera> _camera;
 };

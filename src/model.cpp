@@ -8,6 +8,8 @@ Model::~Model() {
 	
 }
 
-void Model::addMesh(const Mesh& mesh) {
+Model& Model::addMesh(const Mesh& mesh) {
 	_meshes.push_back(mesh);
+	
+	return *this;
 }

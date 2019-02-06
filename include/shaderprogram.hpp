@@ -14,8 +14,8 @@ public:
 	ShaderProgram(const std::string& label);
 	~ShaderProgram();
 	ShaderProgram& attachShader(GLenum type, const std::string& path);
-	void useProgram();
 	void finalize();
+	void useProgram();
 
 	void setValue(int32_t id, int32_t value) { glProgramUniform1i(_program, id, value); }
 	void setValue(int32_t id, uint32_t value) { glProgramUniform1ui(_program, id, value); }
