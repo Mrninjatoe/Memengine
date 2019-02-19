@@ -1,4 +1,5 @@
 #include "GLStuff/renderer.hpp"
+#include "engine.hpp"
 
 Renderer::Renderer(SDL_Window* window){
 	// Request an OpenGL 4.4 Core context
@@ -42,18 +43,37 @@ Renderer::Renderer(SDL_Window* window){
 }
 
 Renderer::~Renderer() {
-	
+	printf("~Renderer()\n");
+	SDL_GL_DeleteContext(Engine::getInstance()->getWindow());
 }
 
-void Renderer::render(const std::shared_ptr<Model>& model, const std::shared_ptr<ShaderProgram>& shader) {
+void Renderer::render(const std::vector<std::shared_ptr<Model>>& models, const std::shared_ptr<ShaderProgram>& shader) {
+	const auto& sizes = Engine::getInstance()->getWindow()->getSize();
+	glViewport(0, 0, sizes.x, sizes.y);
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	//shader->useProgram();
-
-	for (auto mesh : model->getMeshes()) {
-		glBindVertexArray(mesh.getVAO());
-		glDrawElements(GL_TRIANGLES, mesh.getIndices().size(), GL_UNSIGNED_INT, nullptr);
-		glBindVertexArray(0);
+	for (auto model : models) {
+		shader->setValue(3, model->getModelMatrix());
+		shader->setValue(20, 0);
+		shader->setValue(21, 1);
+		for (auto mesh : model->getMeshes()) {
+			mesh->getTextures()[0]->bind(0);
+			mesh->getTextures()[1]->bind(1);
+			glBindVertexArray(mesh->getVAO());
+			glDrawElements(GL_TRIANGLES, mesh->getIndices().size(), GL_UNSIGNED_INT, nullptr);
+			glBindVertexArray(0);
+		}
 	}
+}
+
+void Renderer::renderFBOContent(const std::shared_ptr<Model>& quad) {
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	const auto& sizes = Engine::getInstance()->getWindow()->getSize();
+	glViewport(0, 0, sizes.x, sizes.y);
+	glClearColor(1.f, 1.f, 1.f, 1.f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glBindVertexArray(quad->getMeshes()[0]->getVAO());
+	glDrawElements(GL_TRIANGLES, quad->getMeshes()[0]->getIndices().size(), GL_UNSIGNED_INT, nullptr);
+	glBindVertexArray(0);
 }

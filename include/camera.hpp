@@ -6,7 +6,7 @@
 class Camera {
 public:
 	Camera();
-	~Camera();
+	virtual ~Camera();
 	void update(float deltaTime);
 	glm::mat4 getViewMatrix();
 	glm::mat4 getProjectionMatrix();
@@ -14,22 +14,17 @@ public:
 	glm::vec3 pos;
 	glm::vec3 cameraTarget;
 	glm::vec3 direction;
-
 	glm::vec3 cameraUp;
 	glm::vec3 cameraRight;
-	glm::vec3 walkDir;
 
 	glm::ivec2 mousePos = { 0,0 };
 	
 	float fov = 110.f;
 	float zNear = 0.1f;
 	float zFar = 100.f;
-	float pitch;
-	float yaw;
+	float pitch = 0.f;
+	float yaw = 0.f;
 	float speedMultipler = 1.0f;
-
-	glm::mat4 view;
-	glm::mat4 proj;
 	
 	glm::quat orientation;
 
@@ -43,8 +38,6 @@ public:
 	bool enableMouse = true;
 
 	float timeCounter;
-private:
-	void _resetData();
 };
 
 

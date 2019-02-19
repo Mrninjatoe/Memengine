@@ -1,4 +1,3 @@
-#define GLM_ENABLE_EXPERIMENTAL
 #include <stdio.h>
 #include <SDL2/SDL.h>
 #include <glm/gtx/transform.hpp>
@@ -13,14 +12,12 @@ Camera::Camera() {
 	direction = glm::normalize(pos - cameraTarget);
 	cameraRight = glm::normalize(glm::cross(cameraUp, direction));
 	cameraUp = glm::cross(direction, cameraRight);
-
-	view = glm::lookAt(pos, cameraTarget, cameraUp);
+ 
 	timeCounter = 0.f;
-	walkDir = { 0,0,0 };
 }
 
 Camera::~Camera() {
-	
+	printf("~Camera()\n");
 }
 
 void Camera::update(float dt) {
@@ -33,16 +30,16 @@ void Camera::update(float dt) {
 
 			pitch += dm.y * 0.001f;
 			yaw -= dm.x * 0.001f;
-			float hpi = glm::half_pi<float>() - 0.001;
+			float hpi = glm::half_pi<float>() - 0.001f;
 			pitch = glm::clamp(pitch, -hpi, hpi);
 			SDL_WarpMouseInWindow(Engine::getInstance()->getWindow()->getWindow(), sizes.x / 2, sizes.y / 2);
 		}
 	}
-	float speed = 350.f;
+	float speed = 10.f;
 	if (pressedShift)
 		speed *= 10;
 
-	glm::vec3 walk_dir;
+	glm::vec3 walk_dir = {0,0,0};
 	if (moveForward)
 		walk_dir += glm::vec3(0, 0, 1);
 
@@ -56,22 +53,15 @@ void Camera::update(float dt) {
 		walk_dir += glm::vec3(-1, 0, 0);
 
 	orientation = glm::quat(glm::vec3(0, yaw, 0)) * glm::quat(glm::vec3(pitch, 0, 0));
-
 	walk_dir = orientation * walk_dir;
-
-	pos += walk_dir * dt * speed * 0.001f;
+	pos += walk_dir * speed * dt;
 	if (moveUp)
 		pos.y += speed * dt;
-
+	
 	if (moveDown)
 		pos.y -= speed * dt;
 
 	timeCounter += 1 * dt;
-}
-
-void Camera::_resetData() {
-	walkDir = { 0,0,0 };
-	speedMultipler = 1.0f;
 }
 
 glm::mat4 Camera::getViewMatrix() {

@@ -9,7 +9,8 @@ class Renderer {
 public:
 	Renderer(SDL_Window* window);
 	virtual ~Renderer();
-	void render(const std::shared_ptr<Model>& model, const std::shared_ptr<ShaderProgram>& shader);
+	void render(const std::vector<std::shared_ptr<Model>>& models, const std::shared_ptr<ShaderProgram>& shader);
+	void renderFBOContent(const std::shared_ptr<Model>& quad);
 private:
 	SDL_GLContext _context;
 

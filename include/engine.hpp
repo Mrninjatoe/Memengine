@@ -6,12 +6,20 @@
 #include "meshloader.hpp"
 #include "textureloader.hpp"
 #include "camera.hpp"
+#include "GLStuff/framebuffer.hpp"
 
 class Engine {
 	public:
 		Engine();
-		~Engine() {
-			delete _instance;
+		virtual ~Engine() {
+			printf("Starting deletion of Members in Engine!\n");
+			_camera.reset();
+			_textureLoader.reset();
+			_meshLoader.reset();
+			_renderer.reset();
+			_window.reset();
+			_models.clear();
+			printf("Done deleting member variable for the Engine!\n");
 		}
 
 		static Engine* getInstance() {
@@ -24,20 +32,23 @@ class Engine {
 		Window* getWindow() { return _window.get(); }
 		Renderer* getRenderer() { return _renderer.get(); }
 		MeshLoader* getMeshLoader() { return _meshLoader.get(); }
+		TextureLoader* getTextureLoader() { return _textureLoader.get(); }
 	private:
 		void _init();
 		void _initSDL();
 		void _initGL();
+		void _initWorld();
 		static Engine* _instance;
 		
 		std::unique_ptr<Window> _window;
 		std::unique_ptr<Renderer> _renderer;
-		std::unique_ptr<MeshLoader> _meshLoader;
 		std::unique_ptr<TextureLoader> _textureLoader;
+		std::unique_ptr<MeshLoader> _meshLoader;
 
-
-		std::shared_ptr<Texture> _cannonTexture;
 		std::shared_ptr<ShaderProgram> _normalShader;
+		std::shared_ptr<ShaderProgram> _renderFBOShader;
+		std::shared_ptr<Framebuffer> _geometryFramebuffer;
+		std::shared_ptr<Model> _quad;
 
 		std::vector<std::shared_ptr<Model>> _models;
 

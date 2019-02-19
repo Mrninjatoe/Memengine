@@ -11,11 +11,12 @@ class MeshLoader {
 public:
 	MeshLoader();
 	virtual ~MeshLoader();
-	std::shared_ptr<Model> loadMesh(const std::string& filePath);
+	std::shared_ptr<Model> loadMesh(const std::string& fileName);
 	std::shared_ptr<Model> getTriangleMesh();
 private:
-	void _processNode(aiNode* node, const aiScene* scene, const std::string& path);
-	Mesh _processMesh(aiMesh* mesh, const aiScene* scene);
+	void _processNode(aiNode* node, const aiScene* scene, const std::string& fileName);
+	std::shared_ptr<Mesh> _processMesh(aiMesh* mesh, const aiScene* scene, const std::string& fileName);
+	std::shared_ptr<Texture> _loadMaterialTexture(const aiScene* scene, const aiMaterial* mat, aiTextureType type, const std::string& fileName);
 
 	std::map<const std::string, std::shared_ptr<Model>> _models;
 };

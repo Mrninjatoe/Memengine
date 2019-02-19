@@ -11,6 +11,8 @@ Mesh::~Mesh() {
 	glDeleteBuffers(1, &_ebo);
 	glDeleteBuffers(1, &_vbo);
 	glDeleteBuffers(1, &_vao);
+	_textures.clear();
+	printf("~Mesh()\n");
 }
 
 void Mesh::_setupBuffers() {
@@ -38,8 +40,15 @@ void Mesh::_setupAttributes() {
 	glEnableVertexAttribArray(BindingLocation::color);
 	glVertexAttribPointer(BindingLocation::color, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, Vertex::color));
 
+	glEnableVertexAttribArray(BindingLocation::tangent);
+	glVertexAttribPointer(BindingLocation::tangent, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, Vertex::tangent));
+
 	glEnableVertexAttribArray(BindingLocation::uv);
 	glVertexAttribPointer(BindingLocation::uv, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, Vertex::uv));
 
 	glBindVertexArray(0);
+}
+
+void Mesh::addTexture(const std::shared_ptr<Texture>& tex) {
+	_textures.push_back(tex);
 }

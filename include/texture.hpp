@@ -25,12 +25,12 @@ public:
 		Depth32f
 	};
 
-	GLenum toGLInternal(TextureFormat type) {
+	static GLenum toGLInternal(TextureFormat type) {
 		static const GLenum translate[] = {
-			GL_RED,
-			GL_RG,
-			GL_RGB,
-			GL_RGBA,
+			GL_R8,
+			GL_RG8,
+			GL_RGB8,
+			GL_RGBA8,
 
 			GL_R16F,
 			GL_RG16F,
@@ -49,7 +49,7 @@ public:
 		return translate[static_cast<int>(type)];
 	}
 
-	GLenum toGLBase(TextureFormat type) {
+	static GLenum toGLBase(TextureFormat type) {
 		static const GLenum translate[] = {
 			GL_RED,
 			GL_RG,
@@ -73,7 +73,7 @@ public:
 		return translate[static_cast<int>(type)];
 	}
 
-	GLenum toGLDataType(TextureFormat format) {
+	static GLenum toGLDataType(TextureFormat format) {
 		static const GLenum translate[] = {
 			GL_UNSIGNED_BYTE,
 			GL_UNSIGNED_BYTE,
@@ -99,12 +99,13 @@ public:
 
 	Texture();
 	Texture(const TextureFormat& format, const int width, const int height, void* data);
+	Texture(const TextureFormat& format, const glm::ivec2& sizes);
 	~Texture();
 	void bind(size_t pos) {
 		glActiveTexture(static_cast<GLenum>(GL_TEXTURE0 + pos));
 		glBindTexture(GL_TEXTURE_2D, _texture);
 	}
-
+	GLuint& getID() { return _texture; }
 private:
 	glm::ivec2 _size;
 	TextureFormat _format;
@@ -115,7 +116,7 @@ private:
 		glGenTextures(1, &_texture);
 		//glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, _texture);
-		glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, _size.x, _size.y);	
+		glTexStorage2D(GL_TEXTURE_2D, 1, toGLInternal(_format), _size.x, _size.y);	
 		glTexSubImage2D(GL_TEXTURE_2D,
 			0,
 			0, 0,
@@ -126,11 +127,21 @@ private:
 		);
 		
 		//glTexImage2D(GL_TEXTURE_2D, 0, toGLInternal(_format), _size.x, _size.y, 0, toGLBase(_format), GL_UNSIGNED_BYTE, data);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 		glGenerateMipmap(GL_TEXTURE_2D);
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+
+	void _fboTexture() {
+		glGenTextures(1, &_texture);
+		glBindTexture(GL_TEXTURE_2D, _texture);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexStorage2D(GL_TEXTURE_2D, 1, toGLInternal(_format), _size.x, _size.y);
+		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 };
