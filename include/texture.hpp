@@ -44,7 +44,7 @@ public:
 
 			GL_DEPTH_COMPONENT16,
 			GL_DEPTH_COMPONENT24,
-			GL_DEPTH_COMPONENT32
+			GL_DEPTH_COMPONENT32F,
 		};
 		return translate[static_cast<int>(type)];
 	}
@@ -99,13 +99,17 @@ public:
 
 	Texture();
 	Texture(const TextureFormat& format, const int width, const int height, void* data);
-	Texture(const TextureFormat& format, const glm::ivec2& sizes);
+	Texture(const TextureFormat& format, const glm::ivec2& sizes, const bool& wantArray);
 	~Texture();
-	void bind(size_t pos) {
+	void bind(size_t pos, const bool& isArray = false) {
 		glActiveTexture(static_cast<GLenum>(GL_TEXTURE0 + pos));
-		glBindTexture(GL_TEXTURE_2D, _texture);
+		if (!isArray)
+			glBindTexture(GL_TEXTURE_2D, _texture);
+		else
+			glBindTexture(GL_TEXTURE_2D_ARRAY, _texture);
 	}
 	GLuint& getID() { return _texture; }
+	glm::ivec2 getSize() { return _size; }
 private:
 	glm::ivec2 _size;
 	TextureFormat _format;
@@ -136,12 +140,42 @@ private:
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
-	void _fboTexture() {
+	void _fboTexture2D() {
 		glGenTextures(1, &_texture);
 		glBindTexture(GL_TEXTURE_2D, _texture);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		if (_format == TextureFormat::Depth16f || _format == TextureFormat::Depth24f ||
+			_format == TextureFormat::Depth32f) {
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+			float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+			glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+		}
+		else {
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		}
+
 		glTexStorage2D(GL_TEXTURE_2D, 1, toGLInternal(_format), _size.x, _size.y);
 		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+	void _fboTextureArray2D() {
+		glGenTextures(1, &_texture);
+		glBindTexture(GL_TEXTURE_2D_ARRAY, _texture);
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+
+		//glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT32, _size.x, _size.y, 
+		//	4, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+		glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, toGLInternal(_format), 
+			_size.x, _size.y, 4);
+		glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 	}
 };

@@ -4,6 +4,8 @@
 #include "window.hpp"
 #include "model.hpp"
 #include "shaderprogram.hpp"
+#include "shadowcaster.hpp"
+#include "framebuffer.hpp"
 
 class Renderer {
 public:
@@ -11,6 +13,9 @@ public:
 	virtual ~Renderer();
 	void render(const std::vector<std::shared_ptr<Model>>& models, const std::shared_ptr<ShaderProgram>& shader);
 	void renderFBOContent(const std::shared_ptr<Model>& quad);
+	void renderShadows(const std::vector<std::shared_ptr<Model>>& models, const std::shared_ptr<ShaderProgram>& shader,
+		const std::shared_ptr<Framebuffer>& fbo, const std::shared_ptr<Shadowcaster>& caster);
+	SDL_GLContext& getContext() { return _context; }
 private:
 	SDL_GLContext _context;
 

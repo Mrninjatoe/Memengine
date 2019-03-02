@@ -16,14 +16,21 @@ public:
 		return *this;
 	}
 	Model& setRotation(const float& angle, const glm::vec3& rotation) {
-		_rotation = glm::rotate(angle, rotation);
+		_rotation = glm::rotate(_rotation, glm::radians(angle), rotation);
 		return *this;
 	}
 	Model& setScaling(const glm::vec3& scale) {
 		_scale = scale;
 		return *this;
 	}
+	float getRadius() {
+		return _radius;
+	}
+
+	bool testAgainstRay(const glm::vec3& rayDir, const glm::vec3& rayOrigin);
+
 private:
+	float _radius;
 	std::vector<std::shared_ptr<Mesh>> _meshes;
 	glm::vec3 _pos;
 	glm::vec3 _scale;

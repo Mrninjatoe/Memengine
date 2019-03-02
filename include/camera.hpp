@@ -2,6 +2,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include "model.hpp"
 
 class Camera {
 public:
@@ -16,15 +17,17 @@ public:
 	glm::vec3 direction;
 	glm::vec3 cameraUp;
 	glm::vec3 cameraRight;
+	std::shared_ptr<Model> currentTarget;
 
 	glm::ivec2 mousePos = { 0,0 };
 	
-	float fov = 110.f;
-	float zNear = 0.1f;
-	float zFar = 100.f;
+	float fov = 70.f;
+	float zNear = 1.f;
+	float zFar = 10000.f;
 	float pitch = 0.f;
 	float yaw = 0.f;
 	float speedMultipler = 1.0f;
+	float aspectRatio = 4 / 3.f;
 	
 	glm::quat orientation;
 
@@ -36,6 +39,7 @@ public:
 	bool moveRight = false;
 	bool moveLeft = false;
 	bool enableMouse = true;
+	bool leftClick = false;
 
 	float timeCounter;
 };

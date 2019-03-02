@@ -16,27 +16,29 @@ MeshLoader::~MeshLoader() {
 std::shared_ptr<Model> MeshLoader::loadMesh(const std::string& fileName){
 	std::string filePath = "assets/models/" + fileName;
 	auto meshAlreadyExists = _models.count(fileName);
-	if (meshAlreadyExists)
-		return _models[fileName];
+	if (meshAlreadyExists) {
+		printf("Mesh already exists!\n");
+		return std::make_shared<Model>(_models[fileName]);
+	}
 	
-	const aiScene* scene = aiImportFile(filePath.c_str(), aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+	const aiScene* scene = aiImportFile(filePath.c_str(), aiProcess_Triangulate | 
+		aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 		printf("ERROR::ASSIMP::%s", aiGetErrorString());
 
-	_models[fileName] = std::make_shared<Model>();
-	printf("Number of textures: %u\n", scene->mNumTextures);
+	_models[fileName] = Model();
+	//printf("Number of textures: %u\n", scene->mNumTextures);
 	_processNode(scene->mRootNode, scene, fileName);
 
-	return _models[fileName];
+	return std::make_shared<Model>(_models[fileName]);
 } 
 
 // TO-DO: Fix this class and load in meshes.
 void MeshLoader::_processNode(aiNode* node, const aiScene* scene, const std::string& fileName) {
 	for (unsigned int i = 0; i < node->mNumMeshes; i++) {
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-		_models[fileName]->addMesh(_processMesh(mesh, scene, fileName));
-		printf("Mesh:%u\n", i);
+		_models[fileName].addMesh(_processMesh(mesh, scene, fileName));
 	}
 
 	for (unsigned int i = 0; i < node->mNumChildren; i++)
@@ -45,10 +47,9 @@ void MeshLoader::_processNode(aiNode* node, const aiScene* scene, const std::str
 
 
 std::shared_ptr<Mesh> MeshLoader::_processMesh(aiMesh* mesh, const aiScene* scene, const std::string& fileName) {
-	printf("Processing a mesh!\n");
 	std::vector<Mesh::Vertex> vertices;
 	std::vector<unsigned int> indices;
-
+	bool hasTangents = false;
 	for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
 		Mesh::Vertex vertex;
 		glm::vec3 meshData;
@@ -63,9 +64,17 @@ std::shared_ptr<Mesh> MeshLoader::_processMesh(aiMesh* mesh, const aiScene* scen
 		meshData.z = mesh->mNormals[i].z;
 		vertex.normal = meshData;
 
-		meshData.x = mesh->mTangents[i].x;
-		meshData.y = mesh->mTangents[i].y;
-		meshData.z = mesh->mTangents[i].z;
+		if (mesh->mTangents != NULL) {
+			meshData.x = mesh->mTangents[i].x;
+			meshData.y = mesh->mTangents[i].y;
+			meshData.z = mesh->mTangents[i].z;
+			hasTangents = true;
+		}
+		else{
+			meshData.x = 0.f;
+			meshData.y = 0.f;
+			meshData.z = 0.f;
+		}
 		vertex.tangent = meshData;
 
 		if (mesh->mTextureCoords[0]) {
@@ -87,19 +96,19 @@ std::shared_ptr<Mesh> MeshLoader::_processMesh(aiMesh* mesh, const aiScene* scen
 	}
 
 	auto newMesh = std::make_shared<Mesh>(vertices, indices);
+	newMesh->setHasTangents(hasTangents);
 	
 	if (mesh->mMaterialIndex >= 0) {
-		printf("Screaming Pepega\n");
 		aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 		
-		if (material->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
-			printf("yas\n");
+		if (material->GetTextureCount(aiTextureType_DIFFUSE) > 0)
 			newMesh->addTexture(_loadMaterialTexture(scene, material, aiTextureType_DIFFUSE, fileName));
-		}
-		if (material->GetTextureCount(aiTextureType_NORMALS) > 0) {
-			printf("normals pepega\n");
+		else
+			newMesh->addTexture(Engine::getInstance()->getTextureLoader()->loadTexture("error_textures/error.png"));
+		if (material->GetTextureCount(aiTextureType_NORMALS) > 0)
 			newMesh->addTexture(_loadMaterialTexture(scene, scene->mMaterials[mesh->mMaterialIndex], aiTextureType_NORMALS, fileName));
-		}
+		else
+			newMesh->addTexture(Engine::getInstance()->getTextureLoader()->loadTexture("error_textures/error_normal.png"));
 		//std::shared_ptr<Texture> specularMap = _loadMaterialTexture(scene, material, aiTextureType_SPECULAR, path);
 	}
 
@@ -144,12 +153,12 @@ std::shared_ptr<Texture> MeshLoader::_loadMaterialTexture(const aiScene* scene, 
 //	}
 //}
 
-std::shared_ptr<Model> MeshLoader::getTriangleMesh() {
+std::shared_ptr<Model> MeshLoader::getFullscreenQuad() {
 	auto triangleAlreadyExists = _models.count("quad");
 	if (triangleAlreadyExists)
-		return _models["quad"];
+		return std::make_shared<Model>(_models["quad"]);
 	
-	_models["quad"] = std::make_shared<Model>();
+	_models["quad"] = Model();
 
 	std::vector<Mesh::Vertex> vertices;
 	std::vector<unsigned int> indices;
@@ -165,7 +174,45 @@ std::shared_ptr<Model> MeshLoader::getTriangleMesh() {
 		1, 2, 3
 	};
 
-	_models["quad"]->addMesh(std::make_shared<Mesh>(vertices, indices));
+	_models["quad"].addMesh(std::make_shared<Mesh>(vertices, indices));
 
-	return _models["quad"];
+	return std::make_shared<Model>(_models["quad"]);
+}
+
+std::shared_ptr<Model> MeshLoader::getCubeMesh() {
+	auto triangleAlreadyExists = _models.count("cube");
+	if (triangleAlreadyExists)
+		return std::make_shared<Model>(_models["cube"]);
+
+	_models["cube"] = Model();
+
+	std::vector<Mesh::Vertex> vertices{
+			Mesh::Vertex{ { -0.5, -0.5, -0.5 },{ 0,0,0 },{ 0,0,0 }, {0,0,0}, { 0,0 } }, // 0
+			Mesh::Vertex{ { -0.5, 0.5, -0.5 },{ 0,0,0 },{ 0,0,0 },{0,0,0}, { 0,0 } },
+			Mesh::Vertex{ { 0.5, 0.5, -0.5 },{ 0,0,0 },{ 0,0,0 },{0,0,0}, { 0,0 } },
+			Mesh::Vertex{ { 0.5, -0.5, -0.5 },{ 0,0,0 },{ 0,0,0 },{0,0,0}, { 0,0 } },
+			Mesh::Vertex{ { 0.5, -0.5, 0.5 },{ 0,0,0 },{ 0,0,0 },{0,0,0}, { 0,0 } },
+			Mesh::Vertex{ { 0.5, 0.5, 0.5 },{ 0,0,0 },{ 0,0,0 },{0,0,0},{ 0,0 } },
+			Mesh::Vertex{ { -0.5, 0.5, 0.5 },{ 0,0,0 },{ 0,0,0 },{0,0,0},{ 0,0 } },
+			Mesh::Vertex{ { -0.5, -0.5, 0.5 },{ 0,0,0 },{ 0,0,0 },{0,0,0},{ 0,0 } },
+	};
+
+	std::vector<unsigned int> indices{
+		0, 1,
+		1, 2,
+		2, 3,
+		3, 0,
+		3, 4,
+		4, 5,
+		5, 2,
+		5, 6,
+		6, 7,
+		7, 4,
+		7, 0,
+		6, 1
+	};
+
+	_models["cube"].addMesh(std::make_shared<Mesh>(vertices, indices));
+
+	return std::make_shared<Model>(_models["cube"]);
 }

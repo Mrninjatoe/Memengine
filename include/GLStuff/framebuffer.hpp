@@ -6,16 +6,23 @@
 
 class Framebuffer {
 public:
+	//const enum FramebufferTextureType : const GLenum{
+	//	texture2D = GL_TEXTURE_2D,
+	//	textureArray2D
+	//};
 	Framebuffer();
 	Framebuffer(const std::string& name);
 	virtual ~Framebuffer();
-	Framebuffer& bind();
-	Framebuffer& attachTexture(const unsigned int& pos, const glm::ivec2& size, const Texture::TextureFormat& format);
+	Framebuffer& bind(const GLenum& io = GL_FRAMEBUFFER);
+	Framebuffer& attachTexture(const unsigned int& pos, const glm::ivec2& size, 
+		const Texture::TextureFormat& format, const bool& wantArray = false);
 	std::shared_ptr<Texture> getTexture(const unsigned int& pos) {
 		return _textureAttachments[pos];
 	}
+	void finalize();
 private:
 	GLuint _fbo;
+	//FramebufferTextureType _type;
 	glm::ivec2 _size;
 	std::vector<std::shared_ptr<Texture>> _textureAttachments;
 	std::string _name;

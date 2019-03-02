@@ -11,9 +11,12 @@ Texture::Texture(const TextureFormat& format, const int width, const int height,
 	_setData(data);
 }
 
-Texture::Texture(const TextureFormat& format, const glm::ivec2& size) : _format(format), _size(size) {
+Texture::Texture(const TextureFormat& format, const glm::ivec2& size, const bool& wantArray) : _format(format), _size(size) {
 	printf("sunglasses\n");
-	_fboTexture();
+	if (!wantArray)
+		_fboTexture2D();
+	else
+		_fboTextureArray2D();
 }
 
 Texture::~Texture() {

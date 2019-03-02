@@ -36,11 +36,14 @@ public:
 	std::vector<Vertex>& getVertices() { return _vertices; }
 	void addTexture(const std::shared_ptr<Texture>& tex);
 	std::vector<std::shared_ptr<Texture>> getTextures() { return _textures; }
+	bool hasTangents() { return _hasTangents; }
+	void setHasTangents(const bool& condition) { _hasTangents = condition; }
 
 private:
 	GLuint _vao, _vbo, _ebo;
 	std::vector<Vertex> _vertices;
 	std::vector<unsigned int> _indices;
+	bool _hasTangents;
 
 	std::vector<std::shared_ptr<Texture>> _textures;
 
