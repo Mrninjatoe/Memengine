@@ -13,7 +13,7 @@ public:
 	virtual ~MeshLoader();
 	std::shared_ptr<Model> loadMesh(const std::string& fileName);
 	std::shared_ptr<Model> getFullscreenQuad();
-	std::shared_ptr<Model> getCubeMesh();
+	std::shared_ptr<Model> getLineCubeMesh();
 private:
 	void _processNode(aiNode* node, const aiScene* scene, const std::string& fileName);
 	std::shared_ptr<Mesh> _processMesh(aiMesh* mesh, const aiScene* scene, const std::string& fileName);

@@ -2,7 +2,7 @@
 #include "texture.hpp"
 
 Texture::Texture() : _texture(0), _size(1,1), _format(RGBA8){
-	printf("Texture()\n");
+
 }
 
 Texture::Texture(const TextureFormat& format, const int width, const int height, void* data) : 

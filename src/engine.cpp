@@ -163,25 +163,26 @@ int Engine::run() {
 		}
 
 		_camera->update(deltaTime);
+		_shadowCaster->update(deltaTime);
+		_shadowCaster->createCascadeSplits(_camera, 1024); // 1024*1024 = texture size. Fix for shadowcaster.
 
-		{ // Shadow memes
-			_shadowCaster->update(deltaTime);
-			_shadowCaster->createCascadeSplits(_camera, 1024); // 1024*1024 = texture size. Fix for shadowcaster.
-
-			_shadowShader->useProgram();
-			_shadowFramebuffer->bind();
-			_renderer->renderShadows(_models, _shadowShader, _shadowFramebuffer, _shadowCaster);
-		}
-
-		{	// Geometry pass
+		{	// 1.0 Geometry pass
 			_normalShader->useProgram();
 			_normalShader->setValue(0, _camera->getViewMatrix());
 			_normalShader->setValue(1, _camera->getProjectionMatrix());
+			
 			_geometryFramebuffer->bind();
 			_renderer->render(_models, _normalShader);
 		}
 
-		{ // GBuffer textures and shadow map and other stuff.
+		{ // 1.5 Shadow memes
+			_shadowShader->useProgram();
+			
+			_shadowFramebuffer->bind();
+			_renderer->renderShadows(_models, _shadowShader, _shadowFramebuffer, _shadowCaster);
+		}
+
+		{ // 2.0 GBuffer textures, shadow map and other stuff.
 			_renderFBOShader->useProgram();
 			_renderFBOShader->setValue(18, _shadowCaster->getPos());
 			_renderFBOShader->setValue(19, _camera->pos);
@@ -217,6 +218,16 @@ int Engine::run() {
 			_renderer->renderFullScreenQuad(_quad);
 		}
 
+		{	// Cube map memes
+			_cubemapShader->useProgram();
+			_cubemapShader->setValue(0, glm::mat4(glm::mat3(_camera->getViewMatrix())));
+			_cubemapShader->setValue(1, _camera->getProjectionMatrix());
+			_cubemapShader->setValue(20, 0);
+			_cubeMapTexture->bindCubemap(0);
+
+			_renderer->renderCubemap(_cubeMapModel);
+		}
+
 		{	// Render guizmo for camera's currently selected entity. (model for now)
 			_renderer->showGuizmo(_camera);
 		}
@@ -237,6 +248,7 @@ void Engine::_init() {
 	_initSDL();
 	_initGL();
 
+	_textureLoader = std::make_unique<TextureLoader>();
 	_meshLoader = std::make_unique<MeshLoader>();
 	
 	_shadowShader = std::make_shared<ShaderProgram>("Shadow Pass");
@@ -264,6 +276,11 @@ void Engine::_init() {
 	_renderFBOShader->attachShader(ShaderProgram::ShaderType::VertexShader, "assets/shaders/renderbufferpass.vert")
 		.attachShader(ShaderProgram::ShaderType::FragmentShader, "assets/shaders/renderbufferpass.frag")
 		.finalize();
+
+	_cubemapShader = std::make_shared<ShaderProgram>("Cubemap Pass");
+	_cubemapShader->attachShader(ShaderProgram::ShaderType::VertexShader, "assets/shaders/cubemap.vert")
+		.attachShader(ShaderProgram::ShaderType::FragmentShader, "assets/shaders/cubemap.frag")
+		.finalize();
 	
 	_geometryFramebuffer = std::make_shared<Framebuffer>();
 	_geometryFramebuffer->attachTexture(0, _window->getSize(), Texture::TextureFormat::RGBA32f) // Pos 0
@@ -276,16 +293,13 @@ void Engine::_init() {
 	_shadowFramebuffer->attachTexture(0, glm::ivec2(1024), Texture::TextureFormat::Depth32f, true) // Shadow depths
 		.finalize();
 
-	_textureLoader = std::make_unique<TextureLoader>();
+	_cubeMapTexture = _textureLoader->loadCubeMapTexture("skybox");
+
 	_camera = std::make_shared<Camera>();
 	_camera->pos = glm::vec3(0,0,-10);
 	_shadowCaster = std::make_shared<Shadowcaster>();
-	//_shadowCaster->createCascadeSplits(_camera, 1024);
 	
 	_initWorld();
-
-	/*_lightsUBO = std::make_shared<Uniformbuffer>();
-	_lightsUBO->setData(_lights);*/
 }
 
 void Engine::_initSDL() {
@@ -312,23 +326,15 @@ void Engine::_initWorld() {
 	_models[6]->setPosition(glm::vec3(-15, 5, 15)).setScaling(glm::vec3(5));
 	_models.push_back(_meshLoader->loadMesh("plane.fbx"));
 	_models[7]->setPosition(glm::vec3(0, 0, 0))
-		.setScaling(glm::vec3(10000, 1, 10000));
+		.setScaling(glm::vec3(200, 1, 200));
 	_models.push_back(_meshLoader->loadMesh("sheagle_box.fbx"));
 	_models[8]->setPosition(glm::vec3(8, 1, 8));
 	_models.push_back(_meshLoader->loadMesh("isak_tecken.fbx"));
 	_models[9]->setPosition(glm::vec3(25, 2, 25)).setScaling(glm::vec3(10));
 
-
-	//for (int x = -10; x < 10; x++) {
-	//	for (int z = -10; z < 10; z++) {
-	//		auto tecken = _meshLoader->loadMesh("isak_tecken.fbx");
-	//		tecken->setPosition(glm::vec3(x * 100, 0, z * 100)).setScaling(glm::vec3(10));
-	//		_models.push_back(tecken);
-	//	}
-	//}
-
 	_quad = _meshLoader->getFullscreenQuad();
-	_cubeDebug = _meshLoader->getCubeMesh();
+	_cubeMapModel = _meshLoader->loadMesh("cubeMapBox.fbx");
+	_cubeMapModel->setScaling(glm::vec3(500.f));
 
 	_lights.push_back(std::make_shared<Pointlight>(glm::vec3(0, 10, -10), glm::vec3(1, 1, 1)));
 }

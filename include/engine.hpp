@@ -54,12 +54,13 @@ class Engine {
 		std::shared_ptr<ShaderProgram> _csFrustumDebugShader;
 		std::shared_ptr<ShaderProgram> _normalShader;
 		std::shared_ptr<ShaderProgram> _renderFBOShader;
+		std::shared_ptr<ShaderProgram> _cubemapShader;
 		std::shared_ptr<Framebuffer> _shadowFramebuffer;
 		std::shared_ptr<Framebuffer> _geometryFramebuffer;
-		std::shared_ptr<Uniformbuffer> _lightsUBO;
+		std::shared_ptr<Texture> _cubeMapTexture;
 
 		std::shared_ptr<Model> _quad;
-		std::shared_ptr<Model> _cubeDebug;
+		std::shared_ptr<Model> _cubeMapModel;
 		std::vector<std::shared_ptr<Model>> _models;
 		std::vector<std::shared_ptr<Pointlight>> _lights;
 

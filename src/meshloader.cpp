@@ -178,12 +178,12 @@ std::shared_ptr<Model> MeshLoader::getFullscreenQuad() {
 	return std::make_shared<Model>(_models["quad"]);
 }
 
-std::shared_ptr<Model> MeshLoader::getCubeMesh() {
-	auto triangleAlreadyExists = _models.count("cube");
-	if (triangleAlreadyExists)
-		return std::make_shared<Model>(_models["cube"]);
+std::shared_ptr<Model> MeshLoader::getLineCubeMesh() {
+	auto cubeAlreadyExists = _models.count("linecube");
+	if (cubeAlreadyExists)
+		return std::make_shared<Model>(_models["linecube"]);
 
-	_models["cube"] = Model();
+	_models["linecube"] = Model();
 
 	std::vector<Mesh::Vertex> vertices{
 			Mesh::Vertex{ { -0.5, -0.5, -0.5 },{ 0,0,0 },{ 0,0,0 }, {0,0,0}, { 0,0 } }, // 0
@@ -211,7 +211,7 @@ std::shared_ptr<Model> MeshLoader::getCubeMesh() {
 		6, 1
 	};
 
-	_models["cube"].addMesh(std::make_shared<Mesh>(vertices, indices));
+	_models["linecube"].addMesh(std::make_shared<Mesh>(vertices, indices));
 
-	return std::make_shared<Model>(_models["cube"]);
+	return std::make_shared<Model>(_models["linecube"]);
 }

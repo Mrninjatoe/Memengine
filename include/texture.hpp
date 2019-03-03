@@ -1,6 +1,7 @@
 #pragma once
 #include <glm/glm.hpp>
 #include <glad/glad.h>
+#include <vector>
 
 class Texture {
 public:
@@ -108,6 +109,17 @@ public:
 		else
 			glBindTexture(GL_TEXTURE_2D_ARRAY, _texture);
 	}
+	void bindCubemap(size_t pos) {
+		glActiveTexture(static_cast<GLenum>(GL_TEXTURE0 + pos));
+		glBindTexture(GL_TEXTURE_CUBE_MAP, _texture);
+	}
+
+	void initializeEmpty(const GLuint& id, const glm::ivec2& sizes, const TextureFormat& format) {
+		_texture = id;
+		_size = sizes;
+		_format = format;
+	}
+
 	GLuint& getID() { return _texture; }
 	glm::ivec2 getSize() { return _size; }
 private:
@@ -172,8 +184,6 @@ private:
 		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
 		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 
-		//glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT32, _size.x, _size.y, 
-		//	4, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 		glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, toGLInternal(_format), 
 			_size.x, _size.y, 4);
 		glBindTexture(GL_TEXTURE_2D_ARRAY, 0);

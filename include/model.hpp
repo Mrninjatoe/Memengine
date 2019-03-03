@@ -22,6 +22,7 @@ public:
 		return *this;
 	}
 	Model& setScaling(const glm::vec3& scale) {
+		_prevScale = _scale;
 		_scale = scale;
 		return *this;
 	}
@@ -32,20 +33,8 @@ public:
 		_pos += translation;
 		return *this;
 	}
-	Model& applyScaling(const glm::vec3& scale) {
-		_scale += scale;
-		return *this;
-	}
-	Model& applyScaleToX(const float& xAxis) {
-		_scale = glm::vec3(xAxis, _scale.y, _scale.z);
-		return *this;
-	}
-	Model& applyScaleToY(const float& yAxis) {
-		_scale = glm::vec3(_scale.x, yAxis, _scale.z);
-		return *this;
-	}
-	Model& applyScaleToZ(const float& zAxis) {
-		_scale = glm::vec3(_scale.x, _scale.y, zAxis);
+	Model& applyTempScaling(const glm::vec3& scale) {
+		_scale = scale;
 		return *this;
 	}
 	Model& applyOrientation(const glm::quat& inOrientation) {

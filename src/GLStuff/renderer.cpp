@@ -11,7 +11,7 @@ Renderer::Renderer(SDL_Window* window){
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 4);
 	// Also request a depth buffer
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 32);
 	SDL_GL_SetAttribute(
 		SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG
 	);
@@ -39,11 +39,10 @@ Renderer::Renderer(SDL_Window* window){
 	SDL_GL_SetSwapInterval(1);
 
 	// TODO: Actually use them properly lamog.
-	glDepthMask(GL_TRUE);
-	glDepthFunc(GL_LESS);
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
-	//glDisable(GL_CULL_FACE);
+	glEnable(GL_DEPTH_TEST); // Default
+	glDepthFunc(GL_LESS); // Default
+	glEnable(GL_CULL_FACE); // Default
+	glCullFace(GL_BACK); // Default
 }
 
 Renderer::~Renderer() {
@@ -54,10 +53,8 @@ Renderer::~Renderer() {
 void Renderer::render(const std::vector<std::shared_ptr<Model>>& models, const std::shared_ptr<ShaderProgram>& shader) {
 	const auto& sizes = Engine::getInstance()->getWindow()->getSize();
 	glViewport(0, 0, sizes.x, sizes.y);
-	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
+
 	for (auto model : models) {
 		shader->setValue(2, model->getModelMatrix());
 		shader->setValue(20, 0);
@@ -67,20 +64,9 @@ void Renderer::render(const std::vector<std::shared_ptr<Model>>& models, const s
 			mesh->getTextures()[1]->bind(1);
 			glBindVertexArray(mesh->getVAO());
 			glDrawElements(GL_TRIANGLES, mesh->getIndices().size(), GL_UNSIGNED_INT, nullptr);
-			glBindVertexArray(0);
 		}
 	}
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
 
-void Renderer::renderFullScreenQuad(const std::shared_ptr<Model>& quad) {
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_CULL_FACE);
-	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glBindVertexArray(quad->getMeshes()[0]->getVAO());
-	glDrawElements(GL_TRIANGLES, quad->getMeshes()[0]->getIndices().size(), GL_UNSIGNED_INT, nullptr);
 	glBindVertexArray(0);
 }
 
@@ -88,10 +74,11 @@ void Renderer::renderShadows(const std::vector<std::shared_ptr<Model>>& models, 
 	const std::shared_ptr<Shadowcaster>& caster) {
 	auto size = fbo->getTexture(0)->getSize();
 	glViewport(0, 0, size.x, size.y);
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_DEPTH_CLAMP);
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
 	glCullFace(GL_FRONT);
-	glClear(GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_DEPTH_CLAMP);
+
 	int shaderPos = 5;
 	for (int i = 0; i < 4; i++) {
 		shader->setValue(shaderPos++, caster->getViewProjMatrix(i));
@@ -101,14 +88,45 @@ void Renderer::renderShadows(const std::vector<std::shared_ptr<Model>>& models, 
 		for (auto mesh : model->getMeshes()) {
 			glBindVertexArray(mesh->getVAO());
 			glDrawElements(GL_TRIANGLES, mesh->getIndices().size(), GL_UNSIGNED_INT, nullptr);
-			glBindVertexArray(0);
 		}
 	}	
+
+	const auto& sizes = Engine::getInstance()->getWindow()->getSize();
+	glViewport(0, 0, sizes.x, sizes.y); // change viewport back to screen size.
 	glCullFace(GL_BACK);
-	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_DEPTH_CLAMP);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glBindVertexArray(0);
 }
+
+void Renderer::renderFullScreenQuad(const std::shared_ptr<Model>& quad) {
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glDepthMask(GL_TRUE); // Write to depth buffer. Reading from gbuffer depth.
+	glDisable(GL_CULL_FACE);
+	
+	glBindVertexArray(quad->getMeshes()[0]->getVAO());
+	glDrawElements(GL_TRIANGLES, quad->getMeshes()[0]->getIndices().size(), GL_UNSIGNED_INT, nullptr);
+
+	glBindVertexArray(0);
+}
+
+void Renderer::renderCubemap(const std::shared_ptr<Model>& cubemapModel) {
+	glDepthFunc(GL_LEQUAL);
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_FALSE);
+
+	glBindVertexArray(cubemapModel->getMeshes()[0]->getVAO());
+	glDrawElements(GL_TRIANGLES, cubemapModel->getMeshes()[0]->getIndices().size(), GL_UNSIGNED_INT, nullptr);
+	
+	glDepthFunc(GL_LESS); // Turn back to default testing.
+	glEnable(GL_CULL_FACE);
+	glDepthMask(GL_TRUE);
+
+	glBindVertexArray(0);
+}
+
 
 void Renderer::showGuizmo(const std::shared_ptr<Camera>& camera) {
 	auto currentlySelected = camera->currentTarget.lock();
@@ -168,7 +186,6 @@ void Renderer::showGuizmo(const std::shared_ptr<Camera>& camera) {
 	glm::vec4 perspective;
 
 	glm::decompose(deltaMatrix, scale, orientation, translation, skew, perspective);
-	printf("%f, %f, %f,%f\n", orientation.x, orientation.y, orientation.z, orientation.w);
 
 	static bool didUse = false;
 	if (ImGuizmo::IsUsing()) {
@@ -183,7 +200,7 @@ void Renderer::showGuizmo(const std::shared_ptr<Camera>& camera) {
 			break;
 		case ImGuizmo::SCALE: {
 			glm::vec3 tempScale = currentlySelected->getPrevScaling() + (scale - glm::vec3(1.f));
-			currentlySelected->setScaling(tempScale);
+			currentlySelected->applyTempScaling(tempScale);
 			break;
 		}
 		case ImGuizmo::BOUNDS:
