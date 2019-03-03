@@ -5,11 +5,14 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_opengl3.h"
 #include "imgui/imgui_impl_sdl.h"
+#include "imGui/imGuizmo/ImGuizmo.h"
 
+// Thanks to Dear imgui and imGuizmo :pray:
+// Actually looks cool now Pog.
 
-// TO-DO: Fix blending between cascades
-// Poisson filtering (?).
-// Picking. 
+// TO-DO: Fix blending between cascades - Not done yet.
+// Fix world picking actually using proper hitboxes.
+// Ambient occlusion (?)
 
 Engine* Engine::_instance;
 Engine::Engine() {
@@ -24,7 +27,8 @@ int Engine::run() {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
-	
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+	io.WantCaptureKeyboard = true;
 	ImGui::StyleColorsDark();
 	ImGui_ImplSDL2_InitForOpenGL(_window->getWindow(), _renderer->getContext());
 	ImGui_ImplOpenGL3_Init("#version 440 core");
@@ -43,6 +47,7 @@ int Engine::run() {
 		deltaTime = ((NOW - LAST) * 1000 / (float)SDL_GetPerformanceFrequency()) * 0.001f;
 
 		while (SDL_PollEvent(&event)) {
+			ImGui_ImplSDL2_ProcessEvent(&event);
 			switch (event.key.keysym.sym) {
 			case SDLK_ESCAPE:
 				quit = true;
@@ -65,6 +70,21 @@ int Engine::run() {
 			case SDLK_d:
 				_camera->moveRight = true;
 				break;
+			case SDLK_z:
+				_camera->zPressed = true;
+				_camera->xPressed = false;
+				_camera->cPressed = false;
+				break;
+			case SDLK_x:
+				_camera->zPressed = false;
+				_camera->xPressed = true;
+				_camera->cPressed = false;
+				break;
+			case SDLK_c:
+				_camera->zPressed = false;
+				_camera->xPressed = false;
+				_camera->cPressed = true;
+				break;
 			case SDLK_LCTRL:
 				_camera->moveDown = true;
 				break;
@@ -74,6 +94,10 @@ int Engine::run() {
 					SDL_ShowCursor(_camera->enableMouse);
 					_camera->timeCounter = 0.f;
 				}
+				break;
+			case SDLK_r:
+				_camera->untargeted = true;
+				_camera->currentTarget.reset();
 				break;
 			default:
 				break;
@@ -103,9 +127,13 @@ int Engine::run() {
 				if (event.key.keysym.sym == SDLK_d)
 					_camera->moveRight = false;
 				break;
-			case SDL_MOUSEBUTTONUP:
+			case SDL_MOUSEBUTTONUP: {
 				_camera->leftClick = false;
+				if (auto target = _camera->currentTarget.lock()) {
+					target->setPrevScaling(target->getScaling());
+				}
 				break;
+			}
 			case SDL_QUIT:
 				quit = true;
 				break;
@@ -118,6 +146,7 @@ int Engine::run() {
 			ImGui_ImplOpenGL3_NewFrame();
 			ImGui_ImplSDL2_NewFrame(_window->getWindow());
 			ImGui::NewFrame();
+			ImGuizmo::BeginFrame();
 
 			bool cascadeIsStatic = _shadowCaster->isStatic();
 			ImGui::Begin("Graphic Settings");
@@ -185,8 +214,13 @@ int Engine::run() {
 				_renderFBOShader->setValue(shaderPos++, light->color);
 			}
 
-			_renderer->renderFBOContent(_quad);
+			_renderer->renderFullScreenQuad(_quad);
 		}
+
+		{	// Render guizmo for camera's currently selected entity. (model for now)
+			_renderer->showGuizmo(_camera);
+		}
+
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		SDL_GL_SwapWindow(_window->getWindow());

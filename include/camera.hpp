@@ -17,7 +17,7 @@ public:
 	glm::vec3 direction;
 	glm::vec3 cameraUp;
 	glm::vec3 cameraRight;
-	std::shared_ptr<Model> currentTarget;
+	std::weak_ptr<Model> currentTarget;
 
 	glm::ivec2 mousePos = { 0,0 };
 	
@@ -28,8 +28,6 @@ public:
 	float yaw = 0.f;
 	float speedMultipler = 1.0f;
 	float aspectRatio = 4 / 3.f;
-	
-	glm::quat orientation;
 
 	bool pressedShift = false;
 	bool moveUp = false;
@@ -40,8 +38,17 @@ public:
 	bool moveLeft = false;
 	bool enableMouse = true;
 	bool leftClick = false;
+	bool untargeted = true;
+	bool zPressed = false;
+	bool xPressed = false;
+	bool cPressed = false;
 
 	float timeCounter;
+private:
+	glm::quat _orientation;
+	void _warpMouseInWindow();
+	void _pickWorld();
+	void _cameraMovements(const float& dt);
 };
 
 

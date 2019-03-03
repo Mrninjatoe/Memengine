@@ -14,8 +14,7 @@
 // HAS TO DO WITH SOMETHING. 
 
 
-Shadowcaster::Shadowcaster() : _pos(0, 0.5f, -0.5f), _rotation(glm::mat4(1)), _lookAtTarget(0.f),
-_nearBox(-20.f, 20.f), _farBox(-20.f, 20.f), _nearPlane(1.0f), _farPlane(50.f), _timeCounter(0){
+Shadowcaster::Shadowcaster() : _pos(0, 0.5f, -0.5f), _lookAtTarget(0.f), _timeCounter(0){
 
 }
 
@@ -63,19 +62,6 @@ void Shadowcaster::createCascadeSplits(const std::shared_ptr<Camera>& playerCame
 				cascadeSplits[i] = (d - nearClip) / clipRange;
 			}
 		}
-
-		//float nd = playerCamera->zNear;
-		//float fd = playerCamera->zFar;
-		//cascadeSplits[0] = nd;
-		//for (unsigned int i = 1; i < NUM_CASCADE_SPLITS - 1; i++) {
-		//	float cLog = nd * glm::pow((fd / nd), i / static_cast<float>(NUM_CASCADE_SPLITS));
-		//	float cUni = nd + (fd - nd) * (i / static_cast<float>(NUM_CASCADE_SPLITS));
-
-		//	cascadeSplits[i] = (((lambda * cLog) + (1.f - lambda) * cUni) - nd) / clipRange;
-		//	printf("%f\n", cascadeSplits[i]);
-		//}
-		//cascadeSplits[NUM_CASCADE_SPLITS - 1] = fd;
-
 
 		for (unsigned int cascadeIndex = 0; cascadeIndex < NUM_CASCADE_SPLITS; cascadeIndex++) {
 			float prevSplitDist = cascadeIndex == 0 ? cascadeSplits[0] : cascadeSplits[cascadeIndex - 1];
@@ -154,52 +140,9 @@ void Shadowcaster::createCascadeSplits(const std::shared_ptr<Camera>& playerCame
 	}
 }
 
-Shadowcaster& Shadowcaster::setPosition(const glm::vec3& pos) {
-	_pos = pos;
-	return *this;
-}
-Shadowcaster& Shadowcaster::setRotation(const float& angle, const glm::vec3& axis) {
-	_rotation = glm::rotate(_rotation, glm::radians(angle), axis);
-	return *this;
-}
 Shadowcaster& Shadowcaster::lookAt(const glm::vec3& targetPos) {
 	_lookAtTarget = targetPos;
 	return *this;
-}
-
-Shadowcaster& Shadowcaster::setNearBox(const glm::vec2& nearBox) {
-	_nearBox = nearBox;
-	return *this;
-}
-
-Shadowcaster& Shadowcaster::setFarBox(const glm::vec2& farBox) {
-	_farBox = farBox;
-	return *this;
-}
-
-Shadowcaster& Shadowcaster::setNearPlane(const float& nearPlane){
-	_nearPlane = nearPlane;
-	return *this;
-}
-
-Shadowcaster& Shadowcaster::setFarPlane(const float& farPlane){
-	_farPlane = farPlane;
-	return *this;
-}
-
-glm::mat4 Shadowcaster::getViewMatrix() {
-	return glm::lookAt(_pos, glm::normalize(-_pos), glm::vec3(0, 1, 0));
-}
-
-glm::mat4 Shadowcaster::getProjectionMatrix() {
-	auto size = Engine::getInstance()->getWindow()->getSize();
-	float aspect = size.x / (float)size.y;
-	return glm::ortho(_nearBox.x, _nearBox.y, _farBox.x, _farBox.y, _nearPlane, _farPlane);
-}
-
-glm::mat4 Shadowcaster::getLightspaceMatrix() {
-	
-	return getProjectionMatrix() * getViewMatrix();
 }
 
 glm::vec3 Shadowcaster::getPos() {

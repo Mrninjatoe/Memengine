@@ -1,6 +1,6 @@
 #include "model.hpp"
 
-Model::Model() : _pos(0,0,0), _scale(1), _radius(5.f){
+Model::Model() : _pos(0,0,0), _scale(1), _radius(5.f), _orientation(glm::quat(glm::vec3(0,0,0))), _prevScale(_scale){
 	_rotation = glm::rotate(0.f, glm::vec3(0,1,0));
 }
 
@@ -18,8 +18,8 @@ std::vector<std::shared_ptr<Mesh>>& Model::getMeshes() {
 	return _meshes;
 }
 
-// Sphere intersection test right now.
-bool Model::testAgainstRay(const glm::vec3& rayDir, const glm::vec3& rayOrigin) {
+// Sphere intersection test for now.
+bool Model::sphereAgainstRay(const glm::vec3& rayDir, const glm::vec3& rayOrigin) {
 	double det, b;
 	glm::vec3 p = rayOrigin - _pos;
 	b = -glm::dot(rayDir, p);

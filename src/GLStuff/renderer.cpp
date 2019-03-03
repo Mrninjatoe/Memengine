@@ -1,5 +1,8 @@
 #include "GLStuff/renderer.hpp"
 #include "engine.hpp"
+#include "imgui/imGuizmo/ImGuizmo.h"
+#include "imgui/imgui.h"
+#include <glm/gtx/matrix_decompose.hpp>
 
 Renderer::Renderer(SDL_Window* window){
 	// Request an OpenGL 4.4 Core context
@@ -70,7 +73,7 @@ void Renderer::render(const std::vector<std::shared_ptr<Model>>& models, const s
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void Renderer::renderFBOContent(const std::shared_ptr<Model>& quad) {
+void Renderer::renderFullScreenQuad(const std::shared_ptr<Model>& quad) {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
@@ -105,4 +108,88 @@ void Renderer::renderShadows(const std::vector<std::shared_ptr<Model>>& models, 
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_DEPTH_CLAMP);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void Renderer::showGuizmo(const std::shared_ptr<Camera>& camera) {
+	auto currentlySelected = camera->currentTarget.lock();
+	if (currentlySelected == nullptr)
+		return;
+
+	static ImGuizmo::OPERATION currentOperation(ImGuizmo::SCALE);
+	static ImGuizmo::MODE currentMode(ImGuizmo::WORLD);
+	ImGui::Begin("Camera's Selected Entity");
+	ImGui::Text("Z: Translate, X: Rotate, C: Scale.");
+	if (camera->zPressed)
+		currentOperation = ImGuizmo::TRANSLATE;
+	else if (camera->xPressed)
+		currentOperation = ImGuizmo::ROTATE;
+	else if(camera->cPressed)
+		currentOperation = ImGuizmo::SCALE;
+
+	static bool useSnap = false;
+	if (ImGui::IsKeyPressed('9'))
+		useSnap = !useSnap;
+	ImGui::Checkbox("", &useSnap);
+	ImGui::SameLine();
+
+	glm::vec3* snap = nullptr;
+	switch (currentOperation) {
+	case ImGuizmo::TRANSLATE:
+		static glm::vec3 snapTranslation = glm::vec3(0.1f);
+		snap = &snapTranslation;
+		ImGui::InputFloat3("Snap", glm::value_ptr(snapTranslation));
+		break;
+	case ImGuizmo::ROTATE:
+		static glm::vec3 snapRotation = glm::vec3(0.1f);
+		snap = &snapTranslation;
+		ImGui::InputFloat3("Angle Snap", glm::value_ptr(snapTranslation));
+		break;
+	case ImGuizmo::SCALE:
+		break;
+	default:
+		break;
+	}
+	ImGui::End();
+
+	// ImGuizmo part
+	glm::mat4 modelMatrix = currentlySelected->getModelMatrix();
+	glm::mat4 deltaMatrix;
+
+	ImGuiIO& io = ImGui::GetIO();
+	ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
+	ImGuizmo::Manipulate(glm::value_ptr(camera->getViewMatrix()), glm::value_ptr(camera->getProjectionMatrix()),
+		currentOperation, currentMode, glm::value_ptr(modelMatrix), glm::value_ptr(deltaMatrix), 
+		useSnap ? glm::value_ptr(*snap) : nullptr);
+
+	glm::vec3 scale;
+	glm::quat orientation;
+	glm::vec3 translation;
+	glm::vec3 skew;
+	glm::vec4 perspective;
+
+	glm::decompose(deltaMatrix, scale, orientation, translation, skew, perspective);
+	printf("%f, %f, %f,%f\n", orientation.x, orientation.y, orientation.z, orientation.w);
+
+	static bool didUse = false;
+	if (ImGuizmo::IsUsing()) {
+		didUse = false;
+		switch (currentOperation)
+		{
+		case ImGuizmo::TRANSLATE:
+			currentlySelected->applyPosition(translation);
+			break;
+		case ImGuizmo::ROTATE:
+			currentlySelected->applyOrientation(orientation);
+			break;
+		case ImGuizmo::SCALE: {
+			glm::vec3 tempScale = currentlySelected->getPrevScaling() + (scale - glm::vec3(1.f));
+			currentlySelected->setScaling(tempScale);
+			break;
+		}
+		case ImGuizmo::BOUNDS:
+			break;
+		default:
+			break;
+		}
+	}
 }

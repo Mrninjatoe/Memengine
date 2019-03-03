@@ -109,7 +109,6 @@ std::shared_ptr<Mesh> MeshLoader::_processMesh(aiMesh* mesh, const aiScene* scen
 			newMesh->addTexture(_loadMaterialTexture(scene, scene->mMaterials[mesh->mMaterialIndex], aiTextureType_NORMALS, fileName));
 		else
 			newMesh->addTexture(Engine::getInstance()->getTextureLoader()->loadTexture("error_textures/error_normal.png"));
-		//std::shared_ptr<Texture> specularMap = _loadMaterialTexture(scene, material, aiTextureType_SPECULAR, path);
 	}
 
 	return newMesh;
