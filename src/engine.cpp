@@ -27,7 +27,7 @@ int Engine::run() {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+	io.ConfigFlags |= ImGuiConfigFlags_NavNoCaptureKeyboard;
 	io.WantCaptureKeyboard = true;
 	ImGui::StyleColorsDark();
 	ImGui_ImplSDL2_InitForOpenGL(_window->getWindow(), _renderer->getContext());
@@ -40,6 +40,12 @@ int Engine::run() {
 
 	bool quit = false;
 	bool debugCascades = false;
+
+	// Temp graphics settings.
+	float heightScale = 0.1f;
+	float minLayers = 8.f;
+	float maxLayers = 32.f;
+
 	while (!quit) {
 		LAST = NOW;
 		NOW = SDL_GetPerformanceCounter();
@@ -158,6 +164,10 @@ int Engine::run() {
 				ImGui::SliderFloat("Min Distance", &_shadowCaster->minDistance, 0.f, 1.0f);
 				ImGui::SliderFloat("Max Distance", &_shadowCaster->maxDistance, 0.f, 1.0f);
 			}
+			ImGui::Text("Parallax Mapping Attributes");
+			ImGui::SliderFloat("HeightScale", &heightScale, 0.f, 1.f);
+			ImGui::SliderFloat("MinLayers", &minLayers, 1.f, 100.f);
+			ImGui::SliderFloat("MaxLayers", &maxLayers, 1.f, 100.f);
 			ImGui::End();
 			_shadowCaster->makeStatic(cascadeIsStatic);
 		}
@@ -170,6 +180,10 @@ int Engine::run() {
 			_normalShader->useProgram();
 			_normalShader->setValue(0, _camera->getViewMatrix());
 			_normalShader->setValue(1, _camera->getProjectionMatrix());
+			_normalShader->setValue(3, _camera->pos);
+			_normalShader->setValue(4, heightScale);
+			_normalShader->setValue(5, minLayers);
+			_normalShader->setValue(6, maxLayers);
 			
 			_geometryFramebuffer->bind();
 			_renderer->render(_models, _normalShader);
@@ -218,7 +232,7 @@ int Engine::run() {
 			_renderer->renderFullScreenQuad(_quad);
 		}
 
-		{	// Cube map memes
+		{	// 3.0 Cube map memes
 			_cubemapShader->useProgram();
 			_cubemapShader->setValue(0, glm::mat4(glm::mat3(_camera->getViewMatrix())));
 			_cubemapShader->setValue(1, _camera->getProjectionMatrix());
@@ -310,27 +324,33 @@ void Engine::_initGL() {
 	_renderer = std::make_unique<Renderer>(_window->getWindow());
 }
 void Engine::_initWorld() {
-	_models.push_back(_meshLoader->loadMesh("sheagle_box.fbx"));
-	_models[0]->setPosition(glm::vec3(0, 1, 0));
-	_models.push_back(_meshLoader->loadMesh("flipys_box.fbx"));
-	_models[1]->setPosition(glm::vec3(10, 1, 0));
-	_models.push_back(_meshLoader->loadMesh("box.fbx"));
-	_models[2]->setPosition(glm::vec3(0, 1, 10));
-	_models.push_back(_meshLoader->loadMesh("kuri_box.fbx"));
-	_models[3]->setPosition(glm::vec3(5, 1, 5));
-	_models.push_back(_meshLoader->loadMesh("wrench_box.fbx"));
-	_models[4]->setPosition(glm::vec3(-10, 1, 0));
-	_models.push_back(_meshLoader->loadMesh("cannon_box.fbx"));
-	_models[5]->setPosition(glm::vec3(0, 1, -10));
-	_models.push_back(_meshLoader->loadMesh("duck.fbx"));
-	_models[6]->setPosition(glm::vec3(-15, 5, 15)).setScaling(glm::vec3(5));
+	//_models.push_back(_meshLoader->loadMesh("sheagle_box.fbx"));
+	//_models[0]->setPosition(glm::vec3(0, 1, 0));
+	//_models.push_back(_meshLoader->loadMesh("flipys_box.fbx"));
+	//_models[1]->setPosition(glm::vec3(10, 1, 0));
+	//_models.push_back(_meshLoader->loadMesh("box.fbx"));
+	//_models[2]->setPosition(glm::vec3(0, 1, 10));
+	//_models.push_back(_meshLoader->loadMesh("kuri_box.fbx"));
+	//_models[3]->setPosition(glm::vec3(5, 1, 5));
+	//_models.push_back(_meshLoader->loadMesh("wrench_box.fbx"));
+	//_models[4]->setPosition(glm::vec3(-10, 1, 0));
+	//_models.push_back(_meshLoader->loadMesh("cannon_box.fbx"));
+	//_models[5]->setPosition(glm::vec3(0, 1, -10));
+	//_models.push_back(_meshLoader->loadMesh("duck.fbx"));
+	//_models[6]->setPosition(glm::vec3(-15, 5, 15)).setScaling(glm::vec3(5));
+	//_models.push_back(_meshLoader->loadMesh("plane.fbx"));
+	//_models[7]->setPosition(glm::vec3(0, 0, 0))
+	//	.setScaling(glm::vec3(200, 1, 200));
+	//_models.push_back(_meshLoader->loadMesh("sheagle_box.fbx"));
+	//_models[8]->setPosition(glm::vec3(8, 1, 8));
+	//_models.push_back(_meshLoader->loadMesh("isak_tecken.fbx"));
+	//_models[9]->setPosition(glm::vec3(25, 2, 25)).setScaling(glm::vec3(10));
+	
+	_models.push_back(_meshLoader->loadMesh("brick_wall.obj"));
+	_models[0]->setPosition(glm::vec3(10, 5, 10));
 	_models.push_back(_meshLoader->loadMesh("plane.fbx"));
-	_models[7]->setPosition(glm::vec3(0, 0, 0))
+	_models[1]->setPosition(glm::vec3(0, 0, 0))
 		.setScaling(glm::vec3(200, 1, 200));
-	_models.push_back(_meshLoader->loadMesh("sheagle_box.fbx"));
-	_models[8]->setPosition(glm::vec3(8, 1, 8));
-	_models.push_back(_meshLoader->loadMesh("isak_tecken.fbx"));
-	_models[9]->setPosition(glm::vec3(25, 2, 25)).setScaling(glm::vec3(10));
 
 	_quad = _meshLoader->getFullscreenQuad();
 	_cubeMapModel = _meshLoader->loadMesh("cubeMapBox.fbx");

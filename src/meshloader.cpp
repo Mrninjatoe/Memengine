@@ -28,7 +28,6 @@ std::shared_ptr<Model> MeshLoader::loadMesh(const std::string& fileName){
 		printf("ERROR::ASSIMP::%s", aiGetErrorString());
 
 	_models[fileName] = Model();
-	//printf("Number of textures: %u\n", scene->mNumTextures);
 	_processNode(scene->mRootNode, scene, fileName);
 
 	return std::make_shared<Model>(_models[fileName]);
@@ -100,13 +99,27 @@ std::shared_ptr<Mesh> MeshLoader::_processMesh(aiMesh* mesh, const aiScene* scen
 	
 	if (mesh->mMaterialIndex >= 0) {
 		aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-		
 		if (material->GetTextureCount(aiTextureType_DIFFUSE) > 0)
 			newMesh->addTexture(_loadMaterialTexture(scene, material, aiTextureType_DIFFUSE, fileName));
 		else
 			newMesh->addTexture(Engine::getInstance()->getTextureLoader()->loadTexture("error_textures/error.png"));
-		if (material->GetTextureCount(aiTextureType_NORMALS) > 0)
-			newMesh->addTexture(_loadMaterialTexture(scene, scene->mMaterials[mesh->mMaterialIndex], aiTextureType_NORMALS, fileName));
+		// Due to assimp having a problem differentiating between height/normal/disp. 
+		// Height maps will always be normal maps from now on for obj and NORMALS for fbx.
+		auto isFBX = fileName.find(".fbx");
+		if (isFBX != std::string::npos) {
+			if (material->GetTextureCount(aiTextureType_NORMALS) > 0)
+				newMesh->addTexture(_loadMaterialTexture(scene, scene->mMaterials[mesh->mMaterialIndex], aiTextureType_NORMALS, fileName));
+			else
+				newMesh->addTexture(Engine::getInstance()->getTextureLoader()->loadTexture("error_textures/error_normal.png"));
+		}
+		else { // actually is displacement map... Same thing I guess.
+			if (material->GetTextureCount(aiTextureType_HEIGHT) > 0)
+				newMesh->addTexture(_loadMaterialTexture(scene, scene->mMaterials[mesh->mMaterialIndex], aiTextureType_HEIGHT, fileName));
+			else
+				newMesh->addTexture(Engine::getInstance()->getTextureLoader()->loadTexture("error_textures/error_normal.png"));
+		}
+		if (material->GetTextureCount(aiTextureType_DISPLACEMENT) > 0)
+			newMesh->addTexture(_loadMaterialTexture(scene, scene->mMaterials[mesh->mMaterialIndex], aiTextureType_DISPLACEMENT, fileName));
 		else
 			newMesh->addTexture(Engine::getInstance()->getTextureLoader()->loadTexture("error_textures/error_normal.png"));
 	}

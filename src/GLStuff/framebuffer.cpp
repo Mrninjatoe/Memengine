@@ -32,7 +32,6 @@ Framebuffer& Framebuffer::attachTexture(const unsigned int& pos, const glm::ivec
 		if (!wantArray)
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, attachment->getID(), 0);
 		else {
-			printf("Nu blev jag riktigt arg >:)\n");
 			//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D_ARRAY, attachment->getID(), 0);
 			glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, attachment->getID(), 0);
 		}
@@ -48,12 +47,10 @@ Framebuffer& Framebuffer::attachTexture(const unsigned int& pos, const glm::ivec
 }
 
 void Framebuffer::finalize() {
-	printf("Hit kom jag :)\n");
 	const GLenum buffers[]{ GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3};
 	if (_textureAttachments.size() > 1)
 		glDrawBuffers(4, buffers);
 	else {
-		printf("Yes boi !!!\n");
 		glDrawBuffer(GL_NONE);
 		glReadBuffer(GL_NONE);
 	}

@@ -57,11 +57,13 @@ void Renderer::render(const std::vector<std::shared_ptr<Model>>& models, const s
 
 	for (auto model : models) {
 		shader->setValue(2, model->getModelMatrix());
-		shader->setValue(20, 0);
-		shader->setValue(21, 1);
+		shader->setValue(20, 0); // diff
+		shader->setValue(21, 1); // normal
+		shader->setValue(22, 2); // height
 		for (auto mesh : model->getMeshes()) {
 			mesh->getTextures()[0]->bind(0);
 			mesh->getTextures()[1]->bind(1);
+			mesh->getTextures()[2]->bind(2);
 			glBindVertexArray(mesh->getVAO());
 			glDrawElements(GL_TRIANGLES, mesh->getIndices().size(), GL_UNSIGNED_INT, nullptr);
 		}

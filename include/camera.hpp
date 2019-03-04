@@ -36,7 +36,7 @@ public:
 	bool moveBack = false;
 	bool moveRight = false;
 	bool moveLeft = false;
-	bool enableMouse = true;
+	bool enableMouse = false;
 	bool leftClick = false;
 	bool untargeted = true;
 	bool zPressed = false;

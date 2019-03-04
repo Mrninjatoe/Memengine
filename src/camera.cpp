@@ -23,15 +23,15 @@ Camera::~Camera() {
 }
 
 void Camera::update(float dt) {
-	if (!enableMouse)
+	if (!enableMouse) {
 		_warpMouseInWindow();
+		_cameraMovements(dt);
+	}
 	else {
 		if (leftClick && untargeted)
 			_pickWorld();
-
 	}
 
-	_cameraMovements(dt);
 
 	timeCounter += 1 * dt;
 }
