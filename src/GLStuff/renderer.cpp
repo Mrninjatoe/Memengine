@@ -64,6 +64,7 @@ void Renderer::render(const std::vector<std::shared_ptr<Model>>& models, const s
 			mesh->getTextures()[0]->bind(0);
 			mesh->getTextures()[1]->bind(1);
 			mesh->getTextures()[2]->bind(2);
+			shader->setValue(19, mesh->hasParallax());
 			glBindVertexArray(mesh->getVAO());
 			glDrawElements(GL_TRIANGLES, mesh->getIndices().size(), GL_UNSIGNED_INT, nullptr);
 		}

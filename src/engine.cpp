@@ -324,33 +324,37 @@ void Engine::_initGL() {
 	_renderer = std::make_unique<Renderer>(_window->getWindow());
 }
 void Engine::_initWorld() {
-	//_models.push_back(_meshLoader->loadMesh("sheagle_box.fbx"));
-	//_models[0]->setPosition(glm::vec3(0, 1, 0));
-	//_models.push_back(_meshLoader->loadMesh("flipys_box.fbx"));
-	//_models[1]->setPosition(glm::vec3(10, 1, 0));
-	//_models.push_back(_meshLoader->loadMesh("box.fbx"));
-	//_models[2]->setPosition(glm::vec3(0, 1, 10));
-	//_models.push_back(_meshLoader->loadMesh("kuri_box.fbx"));
-	//_models[3]->setPosition(glm::vec3(5, 1, 5));
-	//_models.push_back(_meshLoader->loadMesh("wrench_box.fbx"));
-	//_models[4]->setPosition(glm::vec3(-10, 1, 0));
-	//_models.push_back(_meshLoader->loadMesh("cannon_box.fbx"));
-	//_models[5]->setPosition(glm::vec3(0, 1, -10));
-	//_models.push_back(_meshLoader->loadMesh("duck.fbx"));
-	//_models[6]->setPosition(glm::vec3(-15, 5, 15)).setScaling(glm::vec3(5));
-	//_models.push_back(_meshLoader->loadMesh("plane.fbx"));
-	//_models[7]->setPosition(glm::vec3(0, 0, 0))
-	//	.setScaling(glm::vec3(200, 1, 200));
-	//_models.push_back(_meshLoader->loadMesh("sheagle_box.fbx"));
-	//_models[8]->setPosition(glm::vec3(8, 1, 8));
-	//_models.push_back(_meshLoader->loadMesh("isak_tecken.fbx"));
-	//_models[9]->setPosition(glm::vec3(25, 2, 25)).setScaling(glm::vec3(10));
+	/*_models.push_back(_meshLoader->loadMesh("sheagle_box.fbx"));
+	_models[0]->setPosition(glm::vec3(0, 1, 0));
+	_models.push_back(_meshLoader->loadMesh("flipys_box.fbx"));
+	_models[1]->setPosition(glm::vec3(10, 1, 0));
+	_models.push_back(_meshLoader->loadMesh("box.fbx"));
+	_models[2]->setPosition(glm::vec3(0, 1, 10));
+	_models.push_back(_meshLoader->loadMesh("kuri_box.fbx"));
+	_models[3]->setPosition(glm::vec3(5, 1, 5));
+	_models.push_back(_meshLoader->loadMesh("wrench_box.fbx"));
+	_models[4]->setPosition(glm::vec3(-10, 1, 0));
+	_models.push_back(_meshLoader->loadMesh("cannon_box.fbx"));
+	_models[5]->setPosition(glm::vec3(0, 1, -10));
+	_models.push_back(_meshLoader->loadMesh("duck.fbx"));
+	_models[6]->setPosition(glm::vec3(-15, 5, 15)).setScaling(glm::vec3(5));
+	_models.push_back(_meshLoader->loadMesh("plane.fbx"));
+	_models[7]->setPosition(glm::vec3(0, 0, 0))
+		.setScaling(glm::vec3(200, 1, 200));
+	_models.push_back(_meshLoader->loadMesh("sheagle_box.fbx"));
+	_models[8]->setPosition(glm::vec3(8, 1, 8));
+	_models.push_back(_meshLoader->loadMesh("isak_tecken.fbx"));
+	_models[9]->setPosition(glm::vec3(25, 2, 25)).setScaling(glm::vec3(10));*/
 	
 	_models.push_back(_meshLoader->loadMesh("brick_wall.obj"));
-	_models[0]->setPosition(glm::vec3(10, 5, 10));
+	_models[0]->setPosition(glm::vec3(10, 5, 10)).setScaling(glm::vec3(2,2,1));
 	_models.push_back(_meshLoader->loadMesh("plane.fbx"));
 	_models[1]->setPosition(glm::vec3(0, 0, 0))
 		.setScaling(glm::vec3(200, 1, 200));
+	_models.push_back(_meshLoader->loadMesh("magicBox.obj"));
+	_models[2]->setPosition(glm::vec3(0, 5, 0));
+	//_models.push_back(_meshLoader->loadMesh("niceFloor.obj"));
+	//_models[3]->setScaling(glm::vec3(20,1,20)).setPosition(glm::vec3(5, 5, 5));
 
 	_quad = _meshLoader->getFullscreenQuad();
 	_cubeMapModel = _meshLoader->loadMesh("cubeMapBox.fbx");

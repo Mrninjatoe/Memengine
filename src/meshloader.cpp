@@ -94,6 +94,7 @@ std::shared_ptr<Mesh> MeshLoader::_processMesh(aiMesh* mesh, const aiScene* scen
 			indices.push_back(face.mIndices[j]);
 	}
 
+	bool hasParallax = false;
 	auto newMesh = std::make_shared<Mesh>(vertices, indices);
 	newMesh->setHasTangents(hasTangents);
 	
@@ -118,11 +119,14 @@ std::shared_ptr<Mesh> MeshLoader::_processMesh(aiMesh* mesh, const aiScene* scen
 			else
 				newMesh->addTexture(Engine::getInstance()->getTextureLoader()->loadTexture("error_textures/error_normal.png"));
 		}
-		if (material->GetTextureCount(aiTextureType_DISPLACEMENT) > 0)
+		if (material->GetTextureCount(aiTextureType_DISPLACEMENT) > 0) {
 			newMesh->addTexture(_loadMaterialTexture(scene, scene->mMaterials[mesh->mMaterialIndex], aiTextureType_DISPLACEMENT, fileName));
+			hasParallax = true;
+		}
 		else
-			newMesh->addTexture(Engine::getInstance()->getTextureLoader()->loadTexture("error_textures/error_normal.png"));
+			newMesh->addTexture(Engine::getInstance()->getTextureLoader()->loadTexture("error_textures/error_displacement.png"));
 	}
+	newMesh->setHasParallax(hasParallax);
 
 	return newMesh;
 }

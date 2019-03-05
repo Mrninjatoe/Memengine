@@ -38,12 +38,15 @@ public:
 	std::vector<std::shared_ptr<Texture>> getTextures() { return _textures; }
 	bool hasTangents() { return _hasTangents; }
 	void setHasTangents(const bool& condition) { _hasTangents = condition; }
+	bool hasParallax() { return _hasParallax; }
+	void setHasParallax(const bool& condition) { _hasParallax = condition; }
 
 private:
 	GLuint _vao, _vbo, _ebo;
 	std::vector<Vertex> _vertices;
 	std::vector<unsigned int> _indices;
 	bool _hasTangents;
+	bool _hasParallax;
 
 	std::vector<std::shared_ptr<Texture>> _textures;
 

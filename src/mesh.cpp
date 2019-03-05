@@ -1,6 +1,7 @@
 #include "mesh.hpp"
 
-Mesh::Mesh(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices) {
+Mesh::Mesh(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices) : _hasTangents(false),
+_hasParallax(false){
 	_vertices = vertices;
 	_indices = indices;
 	_setupBuffers();
