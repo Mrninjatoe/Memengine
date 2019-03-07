@@ -10,7 +10,7 @@
 
 
 // Still a bit broken, too big difference between orthographic boxes.
-// CURRENT PROBLEM: SPLIT 1,2, AND 3 ARE TOO DAMN LARGE.
+// CURRENT PROBLEM: SPLIT 1,2, AND 3 ARE TOO LARGE.
 // HAS TO DO WITH SOMETHING. 
 
 

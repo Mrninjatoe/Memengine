@@ -17,11 +17,23 @@ public:
 		const std::shared_ptr<Framebuffer>& fbo, const std::shared_ptr<Shadowcaster>& caster);
 	void renderFullScreenQuad(const std::shared_ptr<Model>& quad);
 	void renderCubemap(const std::shared_ptr<Model>& cubemapModel);
+	void gaussianFilter();
 
 	void showGuizmo(const std::shared_ptr<Camera>& camera);
 	SDL_GLContext& getContext() { return _context; }
 private:
 	SDL_GLContext _context;
+	//Framebuffer _pingPongBuffers[2];
+	//Texture _pingPongTextures[2];
+
+	void _setUpPingPong() {
+		/*_pingPongBuffers[0] = Framebuffer("Ping Pong 0");
+		_pingPongBuffers[1] = Framebuffer("Ping Pong 1");
+		_pingPongTextures[0] = Texture(1024,);
+		for (unsigned int i = 0; i < 2; i++) {
+			_pingPongBuffers[i].bind();
+		}*/
+	}
 
 	static void APIENTRY _openglCallbackFunction(
 		GLenum source,

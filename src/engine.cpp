@@ -48,6 +48,7 @@ int Engine::run() {
 	//VCSM
 	float lowVSMValue = 0.2f;
 	float highVSMValue = 1.0f;
+	float variancePower = 0.00001f;
 
 	while (!quit) {
 		LAST = NOW;
@@ -170,6 +171,7 @@ int Engine::run() {
 			ImGui::Text("VSM Attributes");
 			ImGui::SliderFloat("lowVSMValue", &lowVSMValue, 0.f, 1.0f);
 			ImGui::SliderFloat("highVSMValue", &highVSMValue, 0.f, 1.0f);
+			ImGui::SliderFloat("variancePower", &variancePower, 0.00001f, 1.0f);
 			ImGui::Text("Parallax Mapping Attributes");
 			ImGui::SliderFloat("HeightScale", &heightScale, 0.f, 1.f);
 			ImGui::SliderFloat("MinLayers", &minLayers, 1.f, 100.f);
@@ -204,6 +206,7 @@ int Engine::run() {
 
 		{ // 2.0 GBuffer textures, shadow map and other stuff.
 			_renderFBOShader->useProgram();
+			_renderFBOShader->setValue(15, variancePower);
 			_renderFBOShader->setValue(16, lowVSMValue);
 			_renderFBOShader->setValue(17, highVSMValue);
 			_renderFBOShader->setValue(18, _shadowCaster->getPos());

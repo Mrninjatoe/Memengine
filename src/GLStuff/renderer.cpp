@@ -44,6 +44,8 @@ Renderer::Renderer(SDL_Window* window){
 	glEnable(GL_CULL_FACE); // Default
 	glCullFace(GL_BACK); // Default
 	glDepthMask(GL_TRUE);// Default
+
+	_setUpPingPong(); // Setup pingpong bois.
 }
 
 Renderer::~Renderer() {
@@ -129,6 +131,10 @@ void Renderer::renderCubemap(const std::shared_ptr<Model>& cubemapModel) {
 	glDepthMask(GL_TRUE);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
+}
+
+void Renderer::gaussianFilter() {
+	
 }
 
 
