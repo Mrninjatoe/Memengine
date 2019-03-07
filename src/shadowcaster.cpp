@@ -14,7 +14,7 @@
 // HAS TO DO WITH SOMETHING. 
 
 
-Shadowcaster::Shadowcaster() : _pos(0, 0.5f, -0.5f), _lookAtTarget(0.f), _timeCounter(0){
+Shadowcaster::Shadowcaster() : _pos(0, 1.f, -1.f), _lookAtTarget(0.f), _timeCounter(0){
 
 }
 

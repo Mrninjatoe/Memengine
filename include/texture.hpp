@@ -120,6 +120,8 @@ public:
 		_format = format;
 	}
 
+	void intializeVSMTex(const glm::ivec2& sizes); // Variance Shadow Mapping Texture.
+
 	GLuint& getID() { return _texture; }
 	glm::ivec2 getSize() { return _size; }
 private:
@@ -181,8 +183,6 @@ private:
 		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 
 		glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, toGLInternal(_format), 
 			_size.x, _size.y, 4);

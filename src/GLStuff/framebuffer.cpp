@@ -22,7 +22,7 @@ Framebuffer& Framebuffer::bind(const GLenum& io) {
 	return *this;
 }
 
-Framebuffer& Framebuffer::attachTexture(const unsigned int& pos, const glm::ivec2& size, 
+Framebuffer& Framebuffer::createTexture(const unsigned int& pos, const glm::ivec2& size, 
 	const Texture::TextureFormat& format, const bool& wantArray) {
 	auto attachment = std::make_shared<Texture>(format, size, wantArray);
 	glBindFramebuffer(GL_FRAMEBUFFER, _fbo);
@@ -46,13 +46,26 @@ Framebuffer& Framebuffer::attachTexture(const unsigned int& pos, const glm::ivec
 	return *this;
 }
 
+Framebuffer& Framebuffer::attachTexture(const unsigned int& pos, const std::shared_ptr<Texture>& tex) {
+	glBindFramebuffer(GL_FRAMEBUFFER, _fbo);
+	glFramebufferTexture(GL_FRAMEBUFFER, static_cast<GLenum>(GL_COLOR_ATTACHMENT0 + pos), tex->getID(), 0);
+
+	_textureAttachments.push_back(tex);
+	return *this;
+}
+
 void Framebuffer::finalize() {
 	const GLenum buffers[]{ GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3};
-	if (_textureAttachments.size() > 1)
+	if (_textureAttachments.size() == 2) {
+		printf("ya boi :sunglasses\n");
+		glDrawBuffers(1, buffers);
+	}
+	else if (_textureAttachments.size() > 1)
 		glDrawBuffers(4, buffers);
 	else {
-		glDrawBuffer(GL_NONE);
-		glReadBuffer(GL_NONE);
+		// ugly for now
+		glDrawBuffers(1, buffers);
+		//glReadBuffer(GL_NONE);
 	}
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
 		printf("Successfully created framebuffer :sunglasses:\n");

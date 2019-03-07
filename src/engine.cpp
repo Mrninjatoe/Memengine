@@ -45,6 +45,9 @@ int Engine::run() {
 	float heightScale = 0.1f;
 	float minLayers = 8.f;
 	float maxLayers = 32.f;
+	//VCSM
+	float lowVSMValue = 0.2f;
+	float highVSMValue = 1.0f;
 
 	while (!quit) {
 		LAST = NOW;
@@ -164,6 +167,9 @@ int Engine::run() {
 				ImGui::SliderFloat("Min Distance", &_shadowCaster->minDistance, 0.f, 1.0f);
 				ImGui::SliderFloat("Max Distance", &_shadowCaster->maxDistance, 0.f, 1.0f);
 			}
+			ImGui::Text("VSM Attributes");
+			ImGui::SliderFloat("lowVSMValue", &lowVSMValue, 0.f, 1.0f);
+			ImGui::SliderFloat("highVSMValue", &highVSMValue, 0.f, 1.0f);
 			ImGui::Text("Parallax Mapping Attributes");
 			ImGui::SliderFloat("HeightScale", &heightScale, 0.f, 1.f);
 			ImGui::SliderFloat("MinLayers", &minLayers, 1.f, 100.f);
@@ -198,6 +204,8 @@ int Engine::run() {
 
 		{ // 2.0 GBuffer textures, shadow map and other stuff.
 			_renderFBOShader->useProgram();
+			_renderFBOShader->setValue(16, lowVSMValue);
+			_renderFBOShader->setValue(17, highVSMValue);
 			_renderFBOShader->setValue(18, _shadowCaster->getPos());
 			_renderFBOShader->setValue(19, _camera->pos);
 			_renderFBOShader->setValue(20, 0);
@@ -297,15 +305,22 @@ void Engine::_init() {
 		.finalize();
 	
 	_geometryFramebuffer = std::make_shared<Framebuffer>();
-	_geometryFramebuffer->attachTexture(0, _window->getSize(), Texture::TextureFormat::RGBA32f) // Pos 0
-		.attachTexture(1, _window->getSize(), Texture::TextureFormat::RGBA32f) // Normal 1
-		.attachTexture(2, _window->getSize(), Texture::TextureFormat::RGBA32f) // Color 2
-		.attachTexture(3, _window->getSize(), Texture::TextureFormat::Depth32f) // Depth 3
+	_geometryFramebuffer->createTexture(0, _window->getSize(), Texture::TextureFormat::RGBA32f) // Pos 0
+		.createTexture(1, _window->getSize(), Texture::TextureFormat::RGBA32f) // Normal 1
+		.createTexture(2, _window->getSize(), Texture::TextureFormat::RGBA32f) // Color 2
+		.createTexture(3, _window->getSize(), Texture::TextureFormat::Depth32f) // Depth 3
 		.finalize();
 
+	auto shadowMapTex = std::make_shared<Texture>();
+	shadowMapTex->intializeVSMTex(glm::ivec2(1024));
+	auto shadowMapTexDepth = std::make_shared<Texture>();
+
 	_shadowFramebuffer = std::make_shared<Framebuffer>("Cascading Shadowmap FBO");
-	_shadowFramebuffer->attachTexture(0, glm::ivec2(1024), Texture::TextureFormat::Depth32f, true) // Shadow depths
-		.finalize();
+	_shadowFramebuffer->attachTexture(0, shadowMapTex)
+		.createTexture(1, glm::ivec2(1024), Texture::TextureFormat::Depth32f, true).finalize();
+	//_shadowFramebuffer->createTexture(0, glm::ivec2(1024), Texture::TextureFormat::Depth32f, true) // Shadow depths
+	//	.finalize();
+
 
 	_cubeMapTexture = _textureLoader->loadCubeMapTexture("skybox");
 
@@ -342,9 +357,7 @@ void Engine::_initWorld() {
 	_models[7]->setPosition(glm::vec3(0, 0, 0))
 		.setScaling(glm::vec3(200, 1, 200));
 	_models.push_back(_meshLoader->loadMesh("sheagle_box.fbx"));
-	_models[8]->setPosition(glm::vec3(8, 1, 8));
-	_models.push_back(_meshLoader->loadMesh("isak_tecken.fbx"));
-	_models[9]->setPosition(glm::vec3(25, 2, 25)).setScaling(glm::vec3(10));*/
+	_models[8]->setPosition(glm::vec3(8, 1, 8));*/
 	
 	_models.push_back(_meshLoader->loadMesh("brick_wall.obj"));
 	_models[0]->setPosition(glm::vec3(10, 5, 10)).setScaling(glm::vec3(2,2,1));
@@ -353,8 +366,8 @@ void Engine::_initWorld() {
 		.setScaling(glm::vec3(200, 1, 200));
 	_models.push_back(_meshLoader->loadMesh("magicBox.obj"));
 	_models[2]->setPosition(glm::vec3(0, 5, 0));
-	//_models.push_back(_meshLoader->loadMesh("niceFloor.obj"));
-	//_models[3]->setScaling(glm::vec3(20,1,20)).setPosition(glm::vec3(5, 5, 5));
+	_models.push_back(_meshLoader->loadMesh("isak_tecken.fbx"));
+	_models[3]->setPosition(glm::vec3(25, 2, 25)).setScaling(glm::vec3(10));
 
 	_quad = _meshLoader->getFullscreenQuad();
 	_cubeMapModel = _meshLoader->loadMesh("cubeMapBox.fbx");

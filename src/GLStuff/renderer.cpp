@@ -43,6 +43,7 @@ Renderer::Renderer(SDL_Window* window){
 	glDepthFunc(GL_LESS); // Default
 	glEnable(GL_CULL_FACE); // Default
 	glCullFace(GL_BACK); // Default
+	glDepthMask(GL_TRUE);// Default
 }
 
 Renderer::~Renderer() {
@@ -51,6 +52,7 @@ Renderer::~Renderer() {
 }
 
 void Renderer::render(const std::vector<std::shared_ptr<Model>>& models, const std::shared_ptr<ShaderProgram>& shader) {
+	// Write to depth, do depth test, cull back.
 	const auto& sizes = Engine::getInstance()->getWindow()->getSize();
 	glViewport(0, 0, sizes.x, sizes.y);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -69,65 +71,64 @@ void Renderer::render(const std::vector<std::shared_ptr<Model>>& models, const s
 			glDrawElements(GL_TRIANGLES, mesh->getIndices().size(), GL_UNSIGNED_INT, nullptr);
 		}
 	}
-
 	glBindVertexArray(0);
+
 }
 
 void Renderer::renderShadows(const std::vector<std::shared_ptr<Model>>& models, const std::shared_ptr<ShaderProgram>& shader, const std::shared_ptr<Framebuffer>& fbo,
 	const std::shared_ptr<Shadowcaster>& caster) {
+	// Write to depth, do depth test, cull front. Have depth clamp.
 	auto size = fbo->getTexture(0)->getSize();
 	glViewport(0, 0, size.x, size.y);
+	glClearColor(1, 1, 0, 0);
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-	glCullFace(GL_FRONT);
 	glEnable(GL_DEPTH_CLAMP);
+	glCullFace(GL_FRONT);
+	int shaderPosLSMatrix = 5;
+	for (int i = 0; i < 4; i++)
+		shader->setValue(shaderPosLSMatrix++, caster->getViewProjMatrix(i));
 
-	int shaderPos = 5;
-	for (int i = 0; i < 4; i++) {
-		shader->setValue(shaderPos++, caster->getViewProjMatrix(i));
-	}
 	for (auto model : models) {
 		shader->setValue(0, model->getModelMatrix());
 		for (auto mesh : model->getMeshes()) {
 			glBindVertexArray(mesh->getVAO());
 			glDrawElements(GL_TRIANGLES, mesh->getIndices().size(), GL_UNSIGNED_INT, nullptr);
 		}
-	}	
-
-	const auto& sizes = Engine::getInstance()->getWindow()->getSize();
-	glViewport(0, 0, sizes.x, sizes.y); // change viewport back to screen size.
+	}
+	glBindVertexArray(0);
 	glCullFace(GL_BACK);
 	glDisable(GL_DEPTH_CLAMP);
-
-	glBindVertexArray(0);
 }
 
 void Renderer::renderFullScreenQuad(const std::shared_ptr<Model>& quad) {
+	// Write to depth, depth test, cull nothing.
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glDepthMask(GL_TRUE); // Write to depth buffer. Reading from gbuffer depth.
-	glDisable(GL_CULL_FACE);
+	const auto& sizes = Engine::getInstance()->getWindow()->getSize();
+	glViewport(0, 0, sizes.x, sizes.y); // change viewport back to screen size.
 	
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glDisable(GL_CULL_FACE);
+
 	glBindVertexArray(quad->getMeshes()[0]->getVAO());
 	glDrawElements(GL_TRIANGLES, quad->getMeshes()[0]->getIndices().size(), GL_UNSIGNED_INT, nullptr);
-
 	glBindVertexArray(0);
 }
 
 void Renderer::renderCubemap(const std::shared_ptr<Model>& cubemapModel) {
-	glDepthFunc(GL_LEQUAL);
-	glEnable(GL_DEPTH_TEST);
+	// Read from depth, do depth test (equal), cull nothing.
 	glDepthMask(GL_FALSE);
+	glDepthFunc(GL_LEQUAL);
 
 	glBindVertexArray(cubemapModel->getMeshes()[0]->getVAO());
 	glDrawElements(GL_TRIANGLES, cubemapModel->getMeshes()[0]->getIndices().size(), GL_UNSIGNED_INT, nullptr);
-	
-	glDepthFunc(GL_LESS); // Turn back to default testing.
-	glEnable(GL_CULL_FACE);
-	glDepthMask(GL_TRUE);
-
 	glBindVertexArray(0);
+
+	glDepthFunc(GL_LESS);
+	glDepthMask(GL_TRUE);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
 }
 
 

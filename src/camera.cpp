@@ -14,7 +14,7 @@ Camera::Camera() {
 	cameraUp = glm::cross(direction, cameraRight);
 	auto size = Engine::getInstance()->getWindow()->getSize();
 	aspectRatio = size.x / (float)size.y;
-	
+	SDL_ShowCursor(enableMouse);
 	timeCounter = 0.f;
 }
 
