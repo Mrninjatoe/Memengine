@@ -23,14 +23,14 @@ Shadowcaster::~Shadowcaster(){
 }
 
 void Shadowcaster::update(float dt) {
-	//float radius = 1.f;
-	//float camX = sin(_timeCounter) * radius;
-	//float camZ = cos(_timeCounter) * radius;
+	float radius = 1.f;
+	float camX = sin(_timeCounter) * radius;
+	float camZ = cos(_timeCounter) * radius;
 
-	//_pos.x = camX;
-	//_pos.z = camZ;
+	_pos.x = camX;
+	_pos.z = camZ;
 
-	//_timeCounter += 1 * dt;
+	_timeCounter += 1 * dt;
 }
 
 void Shadowcaster::createCascadeSplits(const std::shared_ptr<Camera>& playerCamera, const int& texSize) {
@@ -45,7 +45,7 @@ void Shadowcaster::createCascadeSplits(const std::shared_ptr<Camera>& playerCame
 			cascadeSplits[0] = 0.001f;
 			cascadeSplits[1] = 0.007f;
 			cascadeSplits[2] = 0.020f;
-			cascadeSplits[3] = 0.040f;
+			cascadeSplits[3] = 0.070f;
 		}
 		else {
 			float clipRange = farClip - nearClip;
@@ -121,11 +121,11 @@ void Shadowcaster::createCascadeSplits(const std::shared_ptr<Camera>& playerCame
 				glm::mat4 shadowMatrix = lightProj * lightView;
 				glm::vec4 shadowOrigin = glm::vec4(0, 0, 0, 1.f);
 				shadowOrigin = shadowMatrix * shadowOrigin;
-				shadowOrigin = shadowOrigin * (float)texSize / 2.f; // shadowMapSize
+				shadowOrigin = shadowOrigin * ((float)texSize - 1) / 2.f; // shadowMapSize
 		
 				glm::vec4 roundedOrigin = glm::round(shadowOrigin);
 				glm::vec4 roundOffset = roundedOrigin - shadowOrigin;
-				roundOffset = roundOffset * (2.f / (float)texSize);
+				roundOffset = roundOffset * (2.f / ((float)texSize - 1));
 				roundOffset.z = 0.f;
 				roundOffset.w = 0.f;
 				glm::mat4 shadowProj = lightProj;

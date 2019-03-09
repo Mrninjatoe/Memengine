@@ -171,7 +171,7 @@ int Engine::run() {
 			ImGui::Text("VSM Attributes");
 			ImGui::SliderFloat("lowVSMValue", &lowVSMValue, 0.f, 1.0f);
 			ImGui::SliderFloat("highVSMValue", &highVSMValue, 0.f, 1.0f);
-			ImGui::SliderFloat("variancePower", &variancePower, 0.00001f, 1.0f);
+			ImGui::SliderFloat("variancePower", &variancePower, 0.00001f, 1.0f, "%.5f");
 			ImGui::Text("Parallax Mapping Attributes");
 			ImGui::SliderFloat("HeightScale", &heightScale, 0.f, 1.f);
 			ImGui::SliderFloat("MinLayers", &minLayers, 1.f, 100.f);
@@ -197,14 +197,18 @@ int Engine::run() {
 			_renderer->render(_models, _normalShader);
 		}
 
-		{ // 1.5 Shadow memes
+		{ // 2.0 Shadow memes
 			_shadowShader->useProgram();
 			
 			_shadowFramebuffer->bind();
 			_renderer->renderShadows(_models, _shadowShader, _shadowFramebuffer, _shadowCaster);
 		}
 
-		{ // 2.0 GBuffer textures, shadow map and other stuff.
+		{ // 2.5 Use gaussian filter to blur shadows for lighting pass.
+			_renderer->gaussianFilter(_shadowFramebuffer->getTexture(0), _quad, _gaussianFilterShader);
+		}
+
+		{ // 3.0 GBuffer textures, shadow map and other stuff.
 			_renderFBOShader->useProgram();
 			_renderFBOShader->setValue(15, variancePower);
 			_renderFBOShader->setValue(16, lowVSMValue);
@@ -221,7 +225,8 @@ int Engine::run() {
 			_geometryFramebuffer->getTexture(3)->bind(3);
 
 			_renderFBOShader->setValue(24, 4);
-			_shadowFramebuffer->getTexture(0)->bind(4, true);
+			_renderer->getPingPongTexture()->bind(4, true);
+			//_shadowFramebuffer->getTexture(0)->bind(4, true);
 			_renderFBOShader->setValue(25, 4);
 			int mxShaderPos = 26;
 			for (int i = 0; i < 4; i++) {
@@ -243,7 +248,7 @@ int Engine::run() {
 			_renderer->renderFullScreenQuad(_quad);
 		}
 
-		{	// 3.0 Cube map memes
+		{	// 4.0 Cube map memes
 			_cubemapShader->useProgram();
 			_cubemapShader->setValue(0, glm::mat4(glm::mat3(_camera->getViewMatrix())));
 			_cubemapShader->setValue(1, _camera->getProjectionMatrix());
@@ -306,6 +311,12 @@ void Engine::_init() {
 	_cubemapShader->attachShader(ShaderProgram::ShaderType::VertexShader, "assets/shaders/cubemap.vert")
 		.attachShader(ShaderProgram::ShaderType::FragmentShader, "assets/shaders/cubemap.frag")
 		.finalize();
+
+	_gaussianFilterShader = std::make_shared<ShaderProgram>("Gaussian Filter Shader");
+	_gaussianFilterShader->attachShader(ShaderProgram::ShaderType::VertexShader, "assets/shaders/filter-gaussian.vert")
+		.attachShader(ShaderProgram::ShaderType::GeometryShader, "assets/shaders/filter-gaussian.geom")
+		.attachShader(ShaderProgram::ShaderType::FragmentShader, "assets/shaders/filter-gaussian.frag")
+		.finalize();
 	
 	_geometryFramebuffer = std::make_shared<Framebuffer>();
 	_geometryFramebuffer->createTexture(0, _window->getSize(), Texture::TextureFormat::RGBA32f) // Pos 0
@@ -313,6 +324,8 @@ void Engine::_init() {
 		.createTexture(2, _window->getSize(), Texture::TextureFormat::RGBA32f) // Color 2
 		.createTexture(3, _window->getSize(), Texture::TextureFormat::Depth32f) // Depth 3
 		.finalize();
+
+
 
 	auto shadowMapTex = std::make_shared<Texture>();
 	shadowMapTex->intializeVSMTex(glm::ivec2(1024));
@@ -366,7 +379,7 @@ void Engine::_initWorld() {
 	_models[0]->setPosition(glm::vec3(10, 5, 10)).setScaling(glm::vec3(2,2,1));
 	_models.push_back(_meshLoader->loadMesh("plane.fbx"));
 	_models[1]->setPosition(glm::vec3(0, 0, 0))
-		.setScaling(glm::vec3(200, 1, 200));
+		.setScaling(glm::vec3(2000, 1, 2000));
 	_models.push_back(_meshLoader->loadMesh("magicBox.obj"));
 	_models[2]->setPosition(glm::vec3(0, 5, 0));
 	_models.push_back(_meshLoader->loadMesh("isak_tecken.fbx"));

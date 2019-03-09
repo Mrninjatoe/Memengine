@@ -54,6 +54,14 @@ Framebuffer& Framebuffer::attachTexture(const unsigned int& pos, const std::shar
 	return *this;
 }
 
+Framebuffer& Framebuffer::attachTexture(const unsigned int& pos, Texture& tex) {
+	glBindFramebuffer(GL_FRAMEBUFFER, _fbo);
+	glFramebufferTexture(GL_FRAMEBUFFER, static_cast<GLenum>(GL_COLOR_ATTACHMENT0 + pos), tex.getID(), 0);
+	
+	_textureAttachments.push_back(std::make_shared<Texture>(tex));
+	return *this;
+}
+
 void Framebuffer::finalize() {
 	const GLenum buffers[]{ GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3};
 	if (_textureAttachments.size() == 2) {

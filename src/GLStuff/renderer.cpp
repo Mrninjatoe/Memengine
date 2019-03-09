@@ -37,7 +37,7 @@ Renderer::Renderer(SDL_Window* window){
 	);
 
 	SDL_GL_SetSwapInterval(1);
-
+	
 	// TODO: Actually use them properly lamog.
 	glEnable(GL_DEPTH_TEST); // Default
 	glDepthFunc(GL_LESS); // Default
@@ -50,6 +50,9 @@ Renderer::Renderer(SDL_Window* window){
 
 Renderer::~Renderer() {
 	printf("~Renderer()\n");
+	for (unsigned int i = 0; i < 2; i++) {
+		_pingPongBuffers[i].reset();
+	}
 	SDL_GL_DeleteContext(Engine::getInstance()->getWindow());
 }
 
@@ -86,7 +89,7 @@ void Renderer::renderShadows(const std::vector<std::shared_ptr<Model>>& models, 
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
 	glEnable(GL_DEPTH_CLAMP);
-	glCullFace(GL_FRONT);
+	//glCullFace(GL_FRONT);
 	int shaderPosLSMatrix = 5;
 	for (int i = 0; i < 4; i++)
 		shader->setValue(shaderPosLSMatrix++, caster->getViewProjMatrix(i));
@@ -99,8 +102,32 @@ void Renderer::renderShadows(const std::vector<std::shared_ptr<Model>>& models, 
 		}
 	}
 	glBindVertexArray(0);
-	glCullFace(GL_BACK);
+	//glCullFace(GL_BACK);
 	glDisable(GL_DEPTH_CLAMP);
+}
+
+void Renderer::gaussianFilter(const std::shared_ptr<Texture>& toBlur, const std::shared_ptr<Model>& quad, 
+	const std::shared_ptr<ShaderProgram>& gaussianShader) {
+	// use viewport from shadow pass.
+	gaussianShader->useProgram();
+	gaussianShader->setValue(20, 0); // Texture location color_0.
+	auto quadMesh = quad->getMeshes()[0]; // Have to fix this :pepeLaugh:
+	int amount = 1 * 2;
+	glm::vec2 direction = {0,0};
+	bool horizontal = true, firstIteration = true;
+	gaussianShader->setValue(2, 0.75f);
+	glDisable(GL_CULL_FACE);
+	for (unsigned int i = 0; i < amount; i++) {
+		horizontal ? direction = glm::vec2(1, 0) : direction = glm::vec2(0, 1);
+		_pingPongBuffers[horizontal]->bind();
+		gaussianShader->setValue(1, direction);
+		firstIteration ? toBlur->bind(0, true) : _pingPongBuffers[!horizontal]->getTexture(0)->bind(0, true);
+		glBindVertexArray(quadMesh->getVAO());
+		glDrawElements(GL_TRIANGLES, quadMesh->getIndices().size(), GL_UNSIGNED_INT, nullptr);
+		horizontal = !horizontal;
+		if (firstIteration)
+			firstIteration = false;
+	}
 }
 
 void Renderer::renderFullScreenQuad(const std::shared_ptr<Model>& quad) {
@@ -110,8 +137,6 @@ void Renderer::renderFullScreenQuad(const std::shared_ptr<Model>& quad) {
 	glViewport(0, 0, sizes.x, sizes.y); // change viewport back to screen size.
 	
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	glDisable(GL_CULL_FACE);
 
 	glBindVertexArray(quad->getMeshes()[0]->getVAO());
 	glDrawElements(GL_TRIANGLES, quad->getMeshes()[0]->getIndices().size(), GL_UNSIGNED_INT, nullptr);
@@ -132,11 +157,6 @@ void Renderer::renderCubemap(const std::shared_ptr<Model>& cubemapModel) {
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 }
-
-void Renderer::gaussianFilter() {
-	
-}
-
 
 void Renderer::showGuizmo(const std::shared_ptr<Camera>& camera) {
 	auto currentlySelected = camera->currentTarget.lock();

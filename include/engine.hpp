@@ -55,6 +55,7 @@ class Engine {
 		std::shared_ptr<ShaderProgram> _normalShader;
 		std::shared_ptr<ShaderProgram> _renderFBOShader;
 		std::shared_ptr<ShaderProgram> _cubemapShader;
+		std::shared_ptr<ShaderProgram> _gaussianFilterShader;
 		std::shared_ptr<Framebuffer> _shadowFramebuffer;
 		std::shared_ptr<Framebuffer> _geometryFramebuffer;
 		std::shared_ptr<Texture> _cubeMapTexture;
