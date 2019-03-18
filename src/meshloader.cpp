@@ -35,6 +35,7 @@ std::shared_ptr<Model> MeshLoader::loadMesh(const std::string& fileName){
 
 // TO-DO: Fix this class and load in meshes.
 void MeshLoader::_processNode(aiNode* node, const aiScene* scene, const std::string& fileName) {
+	printf("mesh\n");
 	for (unsigned int i = 0; i < node->mNumMeshes; i++) {
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
 		_models[fileName].addMesh(_processMesh(mesh, scene, fileName));
@@ -140,34 +141,6 @@ std::shared_ptr<Texture> MeshLoader::_loadMaterialTexture(const aiScene* scene, 
 	//printf("Full filepath for textures: %s\n", name.c_str());
 	return Engine::getInstance()->getTextureLoader()->loadTexture(fullPath);
 }
-
-//std::shared_ptr<Texture> MeshLoader::_loadMaterialTexture(const aiScene* scene, const aiMaterial* mat, aiTextureType type, const std::string& filePath) {
-//	// FIX THIS GARBAGE >:(
-//	aiString path;
-//	mat->GetTexture(type, 0, &path);
-//
-//	if (path.data[0] == '*') {
-//		int index = atoi(path.data + 1);
-//		std::string mapKey = filePath + path.data[1];
-//		aiTexture* tex = scene->mTextures[index];
-//		printf("%i\n", atoi(path.data + 1));
-//		printf("%i\n", tex->mWidth);
-//		printf("%s\n", tex->achFormatHint);
-//		printf("%p\n", tex->pcData);
-//		printf("\n");
-//
-//		if (tex->mHeight != 0) {
-//			return Engine::getInstance()->getTextureLoader()->loadEmbeddedTexture(tex->mWidth, tex->mHeight, (void*)tex->pcData, mapKey);
-//		}
-//		else
-//			return Engine::getInstance()->getTextureLoader()->loadEmbeddedTexture(tex->achFormatHint, tex->mWidth, (void*)tex->pcData, mapKey);
-//	}
-//	else {
-//		std::string fullPath = path.C_Str();
-//		printf("Full filepath for textures: %s\n", fullPath.c_str());
-//		return Engine::getInstance()->getTextureLoader()->loadTexture(fullPath);
-//	}
-//}
 
 std::shared_ptr<Model> MeshLoader::getFullscreenQuad() {
 	auto triangleAlreadyExists = _models.count("quad");

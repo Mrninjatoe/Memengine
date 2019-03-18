@@ -20,26 +20,15 @@ public:
 	void renderCubemap(const std::shared_ptr<Model>& cubemapModel);
 
 	void showGuizmo(const std::shared_ptr<Camera>& camera);
+	void enableGaussianForVSM(const std::shared_ptr<Shadowcaster>& caster);
 	SDL_GLContext& getContext() { return _context; }
 	std::shared_ptr<Texture> getPingPongTexture() { return _pingPongBuffers[1]->getTexture(0); }
 private:
 	SDL_GLContext _context;
+
+	// I really need to fix this OMEGA
 	std::shared_ptr<Framebuffer> _pingPongBuffers[2];
 	std::shared_ptr<Texture> _pingPongTextures[2];
-
-	void _setUpPingPong() {
-		_pingPongBuffers[0] = std::make_shared<Framebuffer>("Ping Pong 0");
-		_pingPongBuffers[1] = std::make_shared<Framebuffer>("Ping Pong 1");
-		_pingPongTextures[0] = std::make_shared<Texture>();
-		_pingPongTextures[0]->intializeVSMTex(glm::ivec2(1024));
-		_pingPongTextures[1] = std::make_shared<Texture>();
-		_pingPongTextures[1]->intializeVSMTex(glm::ivec2(1024));
-		for (unsigned int i = 0; i < 2; i++) {
-			_pingPongBuffers[i]->bind();
-			_pingPongBuffers[i]->attachTexture(0, _pingPongTextures[i])
-				.finalize();
-		}
-	}
 
 	static void APIENTRY _openglCallbackFunction(
 		GLenum source,

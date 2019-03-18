@@ -63,6 +63,7 @@ class Engine {
 		std::shared_ptr<Model> _quad;
 		std::shared_ptr<Model> _cubeMapModel;
 		std::vector<std::shared_ptr<Model>> _models;
+		std::vector<std::shared_ptr<Model>> _instancedModels;
 		std::vector<std::shared_ptr<Pointlight>> _lights;
 
 		std::shared_ptr<Camera> _camera;

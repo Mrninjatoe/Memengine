@@ -14,12 +14,20 @@
 // HAS TO DO WITH SOMETHING. 
 
 
-Shadowcaster::Shadowcaster() : _pos(0, 1.f, -1.f), _lookAtTarget(0.f), _timeCounter(0){
+Shadowcaster::Shadowcaster() : _pos(0, 1.f, -1.f), _timeCounter(0), 
+numCascadeSplits(4), _resolution(1024){
+	_initialize();
+}
 
+Shadowcaster::Shadowcaster(const int& numSplits, const int& resolution) : _pos(0, 1.f, -1.f), _timeCounter(0.f), 
+numCascadeSplits(numSplits), _resolution(resolution) {
+	_initialize();
 }
 
 Shadowcaster::~Shadowcaster(){
-
+	delete _intermediateCascadeSplits;
+	_cascadedSplits.clear();
+	_cascadedViewProjs.clear();
 }
 
 void Shadowcaster::update(float dt) {
@@ -33,19 +41,17 @@ void Shadowcaster::update(float dt) {
 	_timeCounter += 1 * dt;
 }
 
-void Shadowcaster::createCascadeSplits(const std::shared_ptr<Camera>& playerCamera, const int& texSize) {
+void Shadowcaster::createCascadeSplits(const std::shared_ptr<Camera>& playerCamera) {
 	// 4 = max splits, should make a constant.
 	{
-		float cascadeSplits[NUM_CASCADE_SPLITS] = {};
-
 		float nearClip = playerCamera->zNear; // curr camera
 		float farClip = playerCamera->zFar; // curr camera
 
 		if (_static) {
-			cascadeSplits[0] = 0.001f;
-			cascadeSplits[1] = 0.007f;
-			cascadeSplits[2] = 0.020f;
-			cascadeSplits[3] = 0.070f;
+			_intermediateCascadeSplits[0] = 0.001f;
+			_intermediateCascadeSplits[1] = 0.007f;
+			_intermediateCascadeSplits[2] = 0.020f;
+			_intermediateCascadeSplits[3] = 0.070f;
 		}
 		else {
 			float clipRange = farClip - nearClip;
@@ -54,18 +60,18 @@ void Shadowcaster::createCascadeSplits(const std::shared_ptr<Camera>& playerCame
 			float range = maxZ - minZ;
 			float ratio = maxZ / minZ;
 			// Enable for pratical split scheme.
-			for (unsigned int i = 0; i < NUM_CASCADE_SPLITS; i++) {
-				float p = (i + 1) / static_cast<float>(NUM_CASCADE_SPLITS);
+			for (unsigned int i = 0; i < (unsigned int)numCascadeSplits; i++) {
+				float p = (i + 1) / static_cast<float>(numCascadeSplits);
 				float log = minZ * std::pow(ratio, p);
 				float uniform = minZ + range * p;
 				float d = lambda * (log - uniform) + uniform;
-				cascadeSplits[i] = (d - nearClip) / clipRange;
+				_intermediateCascadeSplits[i] = (d - nearClip) / clipRange;
 			}
 		}
 
-		for (unsigned int cascadeIndex = 0; cascadeIndex < NUM_CASCADE_SPLITS; cascadeIndex++) {
-			float prevSplitDist = cascadeIndex == 0 ? cascadeSplits[0] : cascadeSplits[cascadeIndex - 1];
-			float splitDist = cascadeSplits[cascadeIndex];
+		for (unsigned int cascadeIndex = 0; cascadeIndex < (unsigned int)numCascadeSplits; cascadeIndex++) {
+			float prevSplitDist = cascadeIndex == 0 ? _intermediateCascadeSplits[0] : _intermediateCascadeSplits[cascadeIndex - 1];
+			float splitDist = _intermediateCascadeSplits[cascadeIndex];
 		
 			// Frustrum corners in view space..
 			glm::vec3 frustumCorners[8]{
@@ -121,11 +127,11 @@ void Shadowcaster::createCascadeSplits(const std::shared_ptr<Camera>& playerCame
 				glm::mat4 shadowMatrix = lightProj * lightView;
 				glm::vec4 shadowOrigin = glm::vec4(0, 0, 0, 1.f);
 				shadowOrigin = shadowMatrix * shadowOrigin;
-				shadowOrigin = shadowOrigin * ((float)texSize - 1) / 2.f; // shadowMapSize
+				shadowOrigin = shadowOrigin * ((float)_resolution - 1) / 2.f; // shadowMapSize
 		
 				glm::vec4 roundedOrigin = glm::round(shadowOrigin);
 				glm::vec4 roundOffset = roundedOrigin - shadowOrigin;
-				roundOffset = roundOffset * (2.f / ((float)texSize - 1));
+				roundOffset = roundOffset * (2.f / ((float)_resolution - 1));
 				roundOffset.z = 0.f;
 				roundOffset.w = 0.f;
 				glm::mat4 shadowProj = lightProj;
@@ -140,23 +146,12 @@ void Shadowcaster::createCascadeSplits(const std::shared_ptr<Camera>& playerCame
 	}
 }
 
-Shadowcaster& Shadowcaster::lookAt(const glm::vec3& targetPos) {
-	_lookAtTarget = targetPos;
-	return *this;
-}
-
-glm::vec3 Shadowcaster::getPos() {
-	return _pos;
-}
-
-glm::mat4 Shadowcaster::getViewProjMatrix(const int& pos) {
-	return _cascadedViewProjs[pos];
-}
-
-glm::vec4 Shadowcaster::getCascadedSplits() {
-	return glm::vec4(_cascadedSplits[0], _cascadedSplits[1], _cascadedSplits[2], _cascadedSplits[3]);
-}
-
 void Shadowcaster::makeStatic(const bool& condition) {
 	_static = condition;
+}
+
+void Shadowcaster::_initialize() {
+	_cascadedSplits.resize(numCascadeSplits);
+	_intermediateCascadeSplits = new float[numCascadeSplits];
+	_cascadedViewProjs.resize(numCascadeSplits);
 }

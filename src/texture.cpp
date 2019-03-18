@@ -24,7 +24,7 @@ Texture::~Texture() {
 	glDeleteTextures(1, &_texture);
 }
 
-void Texture::intializeVSMTex(const glm::ivec2& sizes) {
+void Texture::intializeVSMTex(const glm::ivec2& sizes, const int& numOfLayers) {
 	_format = TextureFormat::RG32f;
 	_size = sizes;
 
@@ -36,6 +36,6 @@ void Texture::intializeVSMTex(const glm::ivec2& sizes) {
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 	glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, toGLInternal(_format),
-		_size.x, _size.y, 4);
+		_size.x, _size.y, (GLsizei)numOfLayers);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 }

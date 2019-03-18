@@ -2,30 +2,35 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 #include <memory>
+#include <vector>
 #include "camera.hpp"
-constexpr auto NUM_CASCADE_SPLITS = 4;
 
 class Shadowcaster {
 public:
 	Shadowcaster();
+	Shadowcaster(const int& numOfSplits, const int& resolution);
 	virtual ~Shadowcaster();
 	void update(float dt);
-	void createCascadeSplits(const std::shared_ptr<Camera>& playerCamera, const int& texSize);
-	Shadowcaster& lookAt(const glm::vec3& targetPos);
-	glm::vec3 getPos();
-	glm::mat4 getViewProjMatrix(const int& pos);
-	glm::vec4 getCascadedSplits();
+	void createCascadeSplits(const std::shared_ptr<Camera>& playerCamera);
+	inline glm::vec3 getPos() { return _pos; }
+	inline std::vector<glm::mat4>& getViewProjMatrices() { return _cascadedViewProjs; }
+	inline std::vector<float>& getCascadedSplits() { return _cascadedSplits; }
 	void makeStatic(const bool& condition);
-	bool& isStatic() { return _static; }
+	inline bool& isStatic() { return _static; }
+	inline int getResolution() { return _resolution; }
 
 	float lambda = 1.f;
 	float minDistance = 0.f;
 	float maxDistance = 0.016f;
+	int numCascadeSplits;
 private:
-	bool _static = true;
+	float* _intermediateCascadeSplits;
+	bool _static = false;
 	glm::vec3 _pos;
-	float _cascadedSplits[NUM_CASCADE_SPLITS];
-	glm::mat4 _cascadedViewProjs[NUM_CASCADE_SPLITS];
-	glm::vec3 _lookAtTarget;
+	std::vector<float> _cascadedSplits;
+	std::vector<glm::mat4> _cascadedViewProjs;
 	float _timeCounter;
+	int _resolution; // Always *2 for width/height.
+
+	void _initialize();
 };

@@ -13,6 +13,10 @@ public:
 		color = 2,
 		tangent = 3,
 		uv = 4,
+		m = 5,
+		m_1 = 6,
+		m_2 = 7,
+		m_3 = 8
 	};
 
 	struct Vertex {
@@ -31,10 +35,11 @@ public:
 	Mesh(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices);
 	virtual ~Mesh();
 
+	void addTexture(const std::shared_ptr<Texture>& tex);
+	void setupInstancedBuffer(const std::vector<glm::mat4>& matrices);
 	GLuint& getVAO() { return _vao; }
 	std::vector<unsigned int>& getIndices() { return _indices; }
 	std::vector<Vertex>& getVertices() { return _vertices; }
-	void addTexture(const std::shared_ptr<Texture>& tex);
 	std::vector<std::shared_ptr<Texture>> getTextures() { return _textures; }
 	bool hasTangents() { return _hasTangents; }
 	void setHasTangents(const bool& condition) { _hasTangents = condition; }
@@ -43,6 +48,7 @@ public:
 
 private:
 	GLuint _vao, _vbo, _ebo;
+	GLuint _extraBuffer;
 	std::vector<Vertex> _vertices;
 	std::vector<unsigned int> _indices;
 	bool _hasTangents;

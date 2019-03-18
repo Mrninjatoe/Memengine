@@ -44,14 +44,14 @@ Renderer::Renderer(SDL_Window* window){
 	glEnable(GL_CULL_FACE); // Default
 	glCullFace(GL_BACK); // Default
 	glDepthMask(GL_TRUE);// Default
-
-	_setUpPingPong(); // Setup pingpong bois.
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // Default
 }
 
 Renderer::~Renderer() {
 	printf("~Renderer()\n");
 	for (unsigned int i = 0; i < 2; i++) {
 		_pingPongBuffers[i].reset();
+		_pingPongTextures[i].reset();
 	}
 	SDL_GL_DeleteContext(Engine::getInstance()->getWindow());
 }
@@ -60,24 +60,30 @@ void Renderer::render(const std::vector<std::shared_ptr<Model>>& models, const s
 	// Write to depth, do depth test, cull back.
 	const auto& sizes = Engine::getInstance()->getWindow()->getSize();
 	glViewport(0, 0, sizes.x, sizes.y);
+	//glClearColor(1,1,1,1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+	//glDisable(GL_CULL_FACE);
+	shader->setValue(20, 0); // diff
+	shader->setValue(21, 1); // normal
+	shader->setValue(22, 2); // height
 	for (auto model : models) {
+		auto instanceCount = model->getInstanceCount();
 		shader->setValue(2, model->getModelMatrix());
-		shader->setValue(20, 0); // diff
-		shader->setValue(21, 1); // normal
-		shader->setValue(22, 2); // height
+		shader->setValue(4, instanceCount);
 		for (auto mesh : model->getMeshes()) {
 			mesh->getTextures()[0]->bind(0);
 			mesh->getTextures()[1]->bind(1);
 			mesh->getTextures()[2]->bind(2);
-			shader->setValue(19, mesh->hasParallax());
+			shader->setValue(13, mesh->hasParallax());
 			glBindVertexArray(mesh->getVAO());
-			glDrawElements(GL_TRIANGLES, mesh->getIndices().size(), GL_UNSIGNED_INT, nullptr);
+			if (instanceCount > 0)
+				glDrawElementsInstanced(GL_TRIANGLES, (GLsizei)mesh->getIndices().size(), GL_UNSIGNED_INT, 0, (GLsizei)instanceCount);
+			else
+				glDrawElements(GL_TRIANGLES, (GLsizei)mesh->getIndices().size(), GL_UNSIGNED_INT, 0);
 		}
 	}
 	glBindVertexArray(0);
-
+	//glEnable(GL_CULL_FACE);
 }
 
 void Renderer::renderShadows(const std::vector<std::shared_ptr<Model>>& models, const std::shared_ptr<ShaderProgram>& shader, const std::shared_ptr<Framebuffer>& fbo,
@@ -91,14 +97,21 @@ void Renderer::renderShadows(const std::vector<std::shared_ptr<Model>>& models, 
 	glEnable(GL_DEPTH_CLAMP);
 	//glCullFace(GL_FRONT);
 	int shaderPosLSMatrix = 5;
-	for (int i = 0; i < 4; i++)
-		shader->setValue(shaderPosLSMatrix++, caster->getViewProjMatrix(i));
+	for (auto lsMatrix : caster->getViewProjMatrices())
+		shader->setValue(shaderPosLSMatrix++, lsMatrix);
 
+	shader->setValue(20, 0); // diffuse texture to remove alpha for shadows.
 	for (auto model : models) {
+		auto instanceCount = model->getInstanceCount();
 		shader->setValue(0, model->getModelMatrix());
+		shader->setValue(1, instanceCount);
 		for (auto mesh : model->getMeshes()) {
+			mesh->getTextures()[0]->bind(0);
 			glBindVertexArray(mesh->getVAO());
-			glDrawElements(GL_TRIANGLES, mesh->getIndices().size(), GL_UNSIGNED_INT, nullptr);
+			if(instanceCount > 0)
+				glDrawElementsInstanced(GL_TRIANGLES, (GLsizei)mesh->getIndices().size(), GL_UNSIGNED_INT, 0, (GLsizei)instanceCount);
+			else
+				glDrawElements(GL_TRIANGLES, (GLsizei)mesh->getIndices().size(), GL_UNSIGNED_INT, 0);
 		}
 	}
 	glBindVertexArray(0);
@@ -112,10 +125,10 @@ void Renderer::gaussianFilter(const std::shared_ptr<Texture>& toBlur, const std:
 	gaussianShader->useProgram();
 	gaussianShader->setValue(20, 0); // Texture location color_0.
 	auto quadMesh = quad->getMeshes()[0]; // Have to fix this :pepeLaugh:
-	int amount = 1 * 2;
+	unsigned int amount = 1 * 2;
 	glm::vec2 direction = {0,0};
 	bool horizontal = true, firstIteration = true;
-	gaussianShader->setValue(2, 0.75f);
+	gaussianShader->setValue(2, 1.f);
 	glDisable(GL_CULL_FACE);
 	for (unsigned int i = 0; i < amount; i++) {
 		horizontal ? direction = glm::vec2(1, 0) : direction = glm::vec2(0, 1);
@@ -123,7 +136,7 @@ void Renderer::gaussianFilter(const std::shared_ptr<Texture>& toBlur, const std:
 		gaussianShader->setValue(1, direction);
 		firstIteration ? toBlur->bind(0, true) : _pingPongBuffers[!horizontal]->getTexture(0)->bind(0, true);
 		glBindVertexArray(quadMesh->getVAO());
-		glDrawElements(GL_TRIANGLES, quadMesh->getIndices().size(), GL_UNSIGNED_INT, nullptr);
+		glDrawElements(GL_TRIANGLES, (GLsizei)quadMesh->getIndices().size(), GL_UNSIGNED_INT, nullptr);
 		horizontal = !horizontal;
 		if (firstIteration)
 			firstIteration = false;
@@ -135,11 +148,12 @@ void Renderer::renderFullScreenQuad(const std::shared_ptr<Model>& quad) {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	const auto& sizes = Engine::getInstance()->getWindow()->getSize();
 	glViewport(0, 0, sizes.x, sizes.y); // change viewport back to screen size.
-	
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+	
+	glDisable(GL_CULL_FACE); //Needs to add this if gaussian pass is off.
+	
 	glBindVertexArray(quad->getMeshes()[0]->getVAO());
-	glDrawElements(GL_TRIANGLES, quad->getMeshes()[0]->getIndices().size(), GL_UNSIGNED_INT, nullptr);
+	glDrawElements(GL_TRIANGLES, (GLsizei)quad->getMeshes()[0]->getIndices().size(), GL_UNSIGNED_INT, nullptr);
 	glBindVertexArray(0);
 }
 
@@ -149,7 +163,7 @@ void Renderer::renderCubemap(const std::shared_ptr<Model>& cubemapModel) {
 	glDepthFunc(GL_LEQUAL);
 
 	glBindVertexArray(cubemapModel->getMeshes()[0]->getVAO());
-	glDrawElements(GL_TRIANGLES, cubemapModel->getMeshes()[0]->getIndices().size(), GL_UNSIGNED_INT, nullptr);
+	glDrawElements(GL_TRIANGLES, (GLsizei)cubemapModel->getMeshes()[0]->getIndices().size(), GL_UNSIGNED_INT, nullptr);
 	glBindVertexArray(0);
 
 	glDepthFunc(GL_LESS);
@@ -238,5 +252,20 @@ void Renderer::showGuizmo(const std::shared_ptr<Camera>& camera) {
 		default:
 			break;
 		}
+	}
+}
+
+
+void Renderer::enableGaussianForVSM(const std::shared_ptr<Shadowcaster>& caster) {
+	_pingPongBuffers[0] = std::make_shared<Framebuffer>("Ping Pong 0");
+	_pingPongBuffers[1] = std::make_shared<Framebuffer>("Ping Pong 1");
+	_pingPongTextures[0] = std::make_shared<Texture>();
+	_pingPongTextures[0]->intializeVSMTex(glm::ivec2(caster->getResolution()), caster->numCascadeSplits);
+	_pingPongTextures[1] = std::make_shared<Texture>();
+	_pingPongTextures[1]->intializeVSMTex(glm::ivec2(caster->getResolution()), caster->numCascadeSplits);
+	for (unsigned int i = 0; i < 2; i++) {
+		_pingPongBuffers[i]->bind();
+		_pingPongBuffers[i]->attachTexture(0, _pingPongTextures[i])
+			.finalize();
 	}
 }

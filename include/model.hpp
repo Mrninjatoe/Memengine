@@ -50,10 +50,14 @@ public:
 	void setPrevScaling(const glm::vec3& newScale) {
 		_prevScale = newScale;
 	}
+	unsigned int getInstanceCount() { return _instanceCount; }
 	bool sphereAgainstRay(const glm::vec3& rayDir, const glm::vec3& rayOrigin);
+	void makeInstanceable(const std::vector<glm::mat4>& matrices);
 
 private:
 	float _radius;
+	bool _isInstanced;
+	unsigned int _instanceCount;
 	std::vector<std::shared_ptr<Mesh>> _meshes;
 	glm::vec3 _pos;
 	glm::vec3 _scale;

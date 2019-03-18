@@ -182,16 +182,16 @@ int Engine::run() {
 
 		_camera->update(deltaTime);
 		_shadowCaster->update(deltaTime);
-		_shadowCaster->createCascadeSplits(_camera, 1024); // 1024*1024 = texture size. Fix for shadowcaster.
+		_shadowCaster->createCascadeSplits(_camera); // Cascading shadow maps split per frame...
 
 		{	// 1.0 Geometry pass
 			_normalShader->useProgram();
 			_normalShader->setValue(0, _camera->getViewMatrix());
 			_normalShader->setValue(1, _camera->getProjectionMatrix());
 			_normalShader->setValue(3, _camera->pos);
-			_normalShader->setValue(4, heightScale);
-			_normalShader->setValue(5, minLayers);
-			_normalShader->setValue(6, maxLayers);
+			_normalShader->setValue(10, heightScale);
+			_normalShader->setValue(11, minLayers);
+			_normalShader->setValue(12, maxLayers);
 			
 			_geometryFramebuffer->bind();
 			_renderer->render(_models, _normalShader);
@@ -204,9 +204,9 @@ int Engine::run() {
 			_renderer->renderShadows(_models, _shadowShader, _shadowFramebuffer, _shadowCaster);
 		}
 
-		{ // 2.5 Use gaussian filter to blur shadows for lighting pass.
-			_renderer->gaussianFilter(_shadowFramebuffer->getTexture(0), _quad, _gaussianFilterShader);
-		}
+		//{ // 2.5 Use gaussian filter to blur shadows for lighting pass.
+		//	_renderer->gaussianFilter(_shadowFramebuffer->getTexture(0), _quad, _gaussianFilterShader);
+		//}
 
 		{ // 3.0 GBuffer textures, shadow map and other stuff.
 			_renderFBOShader->useProgram();
@@ -219,30 +219,33 @@ int Engine::run() {
 			_renderFBOShader->setValue(21, 1);
 			_renderFBOShader->setValue(22, 2);
 			_renderFBOShader->setValue(23, 3);
+			_renderFBOShader->setValue(24, 4);
 			_geometryFramebuffer->getTexture(0)->bind(0);
 			_geometryFramebuffer->getTexture(1)->bind(1);
 			_geometryFramebuffer->getTexture(2)->bind(2);
 			_geometryFramebuffer->getTexture(3)->bind(3);
+			_shadowFramebuffer->getTexture(0)->bind(4, true);
+			//_renderer->getPingPongTexture()->bind(4, true);
 
-			_renderFBOShader->setValue(24, 4);
-			_renderer->getPingPongTexture()->bind(4, true);
-			//_shadowFramebuffer->getTexture(0)->bind(4, true);
-			_renderFBOShader->setValue(25, 4);
-			int mxShaderPos = 26;
-			for (int i = 0; i < 4; i++) {
-				_renderFBOShader->setValue(mxShaderPos++, _shadowCaster->getViewProjMatrix(i));
-			}
-			_renderFBOShader->setValue(30, _shadowCaster->getCascadedSplits());
-			_renderFBOShader->setValue(31, _window->getSize());
-			_renderFBOShader->setValue(32, _camera->getViewMatrix());
-			_renderFBOShader->setValue(33, debugCascades);
+			_renderFBOShader->setValue(25, _window->getSize());
+			_renderFBOShader->setValue(26, _camera->getViewMatrix());
+			_renderFBOShader->setValue(27, debugCascades);
+			
+			_renderFBOShader->setValue(28, _shadowCaster->numCascadeSplits);
+			int splitShaderPos = 29;
+			for (auto split : _shadowCaster->getCascadedSplits())
+				_renderFBOShader->setValue(splitShaderPos++, split);
+			
+			int mxShaderPos = 37;
+			for (auto shadowViewProjMX : _shadowCaster->getViewProjMatrices())
+				_renderFBOShader->setValue(mxShaderPos++, shadowViewProjMX);
 
-			_renderFBOShader->setValue(34, (int)_lights.size());
-			int shaderPos = 35;
+			_renderFBOShader->setValue(45, (int)_lights.size());
+			int lightShaderPos = 46;
 			for (int i = 0; i < _lights.size(); i++) {
 				auto light = _lights[i];
-				_renderFBOShader->setValue(shaderPos++, light->pos);
-				_renderFBOShader->setValue(shaderPos++, light->color);
+				_renderFBOShader->setValue(lightShaderPos++, light->pos);
+				_renderFBOShader->setValue(lightShaderPos++, light->color);
 			}
 
 			_renderer->renderFullScreenQuad(_quad);
@@ -326,23 +329,21 @@ void Engine::_init() {
 		.finalize();
 
 
+	_shadowCaster = std::make_shared<Shadowcaster>(4, 2048);
 
 	auto shadowMapTex = std::make_shared<Texture>();
-	shadowMapTex->intializeVSMTex(glm::ivec2(1024));
-	auto shadowMapTexDepth = std::make_shared<Texture>();
+	shadowMapTex->intializeVSMTex(glm::ivec2(_shadowCaster->getResolution()), _shadowCaster->numCascadeSplits);
 
 	_shadowFramebuffer = std::make_shared<Framebuffer>("Cascading Shadowmap FBO");
 	_shadowFramebuffer->attachTexture(0, shadowMapTex)
-		.createTexture(1, glm::ivec2(1024), Texture::TextureFormat::Depth32f, true).finalize();
-	//_shadowFramebuffer->createTexture(0, glm::ivec2(1024), Texture::TextureFormat::Depth32f, true) // Shadow depths
-	//	.finalize();
-
+		.createTexture(1, glm::ivec2(_shadowCaster->getResolution()), Texture::TextureFormat::Depth32f, true).finalize();
 
 	_cubeMapTexture = _textureLoader->loadCubeMapTexture("skybox");
 
 	_camera = std::make_shared<Camera>();
 	_camera->pos = glm::vec3(0,0,-10);
-	_shadowCaster = std::make_shared<Shadowcaster>();
+
+	_renderer->enableGaussianForVSM(_shadowCaster);
 	
 	_initWorld();
 }
@@ -375,15 +376,49 @@ void Engine::_initWorld() {
 	_models.push_back(_meshLoader->loadMesh("sheagle_box.fbx"));
 	_models[8]->setPosition(glm::vec3(8, 1, 8));*/
 	
-	_models.push_back(_meshLoader->loadMesh("brick_wall.obj"));
+	/*_models.push_back(_meshLoader->loadMesh("brick_wall.obj"));
 	_models[0]->setPosition(glm::vec3(10, 5, 10)).setScaling(glm::vec3(2,2,1));
 	_models.push_back(_meshLoader->loadMesh("plane.fbx"));
 	_models[1]->setPosition(glm::vec3(0, 0, 0))
 		.setScaling(glm::vec3(2000, 1, 2000));
-	_models.push_back(_meshLoader->loadMesh("magicBox.obj"));
-	_models[2]->setPosition(glm::vec3(0, 5, 0));
 	_models.push_back(_meshLoader->loadMesh("isak_tecken.fbx"));
-	_models[3]->setPosition(glm::vec3(25, 2, 25)).setScaling(glm::vec3(10));
+	_models[3]->setPosition(glm::vec3(25, 2, 25)).setScaling(glm::vec3(1));*/
+	
+	/*_models.push_back(_meshLoader->loadMesh("treeVersion2.fbx"));
+	_models[0]->setPosition(glm::vec3(30, 0, 15)).setScaling(glm::vec3(2));
+	_models.push_back(_meshLoader->loadMesh("treeVersion4.fbx"));
+	_models[1]->setPosition(glm::vec3(15, 0, 15)).setScaling(glm::vec3(2));
+	_models.push_back(_meshLoader->loadMesh("plane.fbx"));
+	_models[2]->setPosition(glm::vec3(0, 0, 0))
+		.setScaling(glm::vec3(2000, 1, 2000));
+	_models.push_back(_meshLoader->loadMesh("magicBox.obj"));
+	_models[3]->setPosition(glm::vec3(50, 5, 50));*/
+	//_models.push_back(_meshLoader->loadMesh("brick_wall.obj"));
+	//_models[1]->setPosition(glm::vec3(10, 5, 10)).setScaling(glm::vec3(2, 2, 1));
+
+	_models.push_back(_meshLoader->loadMesh("lowPolyTree.fbx"));
+	//_models.push_back(_meshLoader->loadMesh("isak_tecken.fbx"));
+
+	auto fRand = [](auto min, auto max) {
+		double f = (double)rand() / RAND_MAX;
+		return min + f * (max - min);
+	};
+
+
+	std::vector<glm::mat4> matrices;
+	for (int y = -50; y < 50; y++) {
+		for (int x = -50; x < 50; x++) {
+			glm::mat4 newScale = glm::scale(glm::vec3(1) + (float)abs(fRand(x, y)) );
+			glm::mat4 newTrans = glm::translate(glm::vec3(fRand(x, y) * 50, 0, fRand(x, y) *  50));
+
+			matrices.push_back(newTrans * newScale);
+		}
+	}
+	_models[0]->makeInstanceable(matrices);
+
+	_models.push_back(_meshLoader->loadMesh("plane.fbx"));
+	_models[1]->setPosition(glm::vec3(0, 0, 0))
+		.setScaling(glm::vec3(2000, 1, 2000));
 
 	_quad = _meshLoader->getFullscreenQuad();
 	_cubeMapModel = _meshLoader->loadMesh("cubeMapBox.fbx");

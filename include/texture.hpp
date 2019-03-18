@@ -120,7 +120,7 @@ public:
 		_format = format;
 	}
 
-	void intializeVSMTex(const glm::ivec2& sizes); // Variance Shadow Mapping Texture.
+	void intializeVSMTex(const glm::ivec2& sizes, const int& numOfLayers); // Variance Shadow Mapping Texture.
 
 	GLuint& getID() { return _texture; }
 	glm::ivec2 getSize() { return _size; }
@@ -145,10 +145,10 @@ private:
 		);
 		
 		//glTexImage2D(GL_TEXTURE_2D, 0, toGLInternal(_format), _size.x, _size.y, 0, toGLBase(_format), GL_UNSIGNED_BYTE, data);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
 		float amount = 4.f;
 		float supportedMax = 0.f;
