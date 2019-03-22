@@ -27,6 +27,12 @@ public:
 		glm::vec2 uv;
 	};
 
+	const enum TextureLocation : const int {
+		diffuse = 0,
+		normalMap = 1,
+		heightMap = 2
+	};
+
 	/*struct Material {
 		
 	};*/
@@ -37,6 +43,8 @@ public:
 
 	void addTexture(const std::shared_ptr<Texture>& tex);
 	void setupInstancedBuffer(const std::vector<glm::mat4>& matrices);
+	void updateInstancedBufferFull(const std::vector<glm::mat4>& matrices);
+	void updateInstancedBufferOffset(const glm::ivec2& offset, const glm::mat4& newMatrix);
 	GLuint& getVAO() { return _vao; }
 	std::vector<unsigned int>& getIndices() { return _indices; }
 	std::vector<Vertex>& getVertices() { return _vertices; }

@@ -66,22 +66,25 @@ void Renderer::render(const std::vector<std::shared_ptr<Model>>& models, const s
 	shader->setValue(20, 0); // diff
 	shader->setValue(21, 1); // normal
 	shader->setValue(22, 2); // height
-	for (auto model : models) {
-		auto instanceCount = model->getInstanceCount();
-		shader->setValue(2, model->getModelMatrix());
-		shader->setValue(4, instanceCount);
-		for (auto mesh : model->getMeshes()) {
-			mesh->getTextures()[0]->bind(0);
-			mesh->getTextures()[1]->bind(1);
-			mesh->getTextures()[2]->bind(2);
-			shader->setValue(13, mesh->hasParallax());
-			glBindVertexArray(mesh->getVAO());
-			if (instanceCount > 0)
+
+	for (auto mapContainer : Engine::getInstance()->getModelHandler()->getAllModels()) {
+		for (auto model : mapContainer.second) {
+			auto instanceCount = (unsigned int)mapContainer.second.size();
+			shader->setValue(2, model->getModelMatrix());
+			shader->setValue(4, instanceCount);
+			for (auto mesh : model->getMeshes()) {
+				mesh->getTextures()[Mesh::TextureLocation::diffuse]->bind(0);
+				mesh->getTextures()[Mesh::TextureLocation::normalMap]->bind(1);
+				mesh->getTextures()[Mesh::TextureLocation::heightMap]->bind(2);
+				shader->setValue(13, mesh->hasParallax());
+				glBindVertexArray(mesh->getVAO());
 				glDrawElementsInstanced(GL_TRIANGLES, (GLsizei)mesh->getIndices().size(), GL_UNSIGNED_INT, 0, (GLsizei)instanceCount);
-			else
-				glDrawElements(GL_TRIANGLES, (GLsizei)mesh->getIndices().size(), GL_UNSIGNED_INT, 0);
+			}
+			if (instanceCount > 1) // Ugly exit for now
+				break;
 		}
 	}
+
 	glBindVertexArray(0);
 	//glEnable(GL_CULL_FACE);
 }
@@ -101,17 +104,18 @@ void Renderer::renderShadows(const std::vector<std::shared_ptr<Model>>& models, 
 		shader->setValue(shaderPosLSMatrix++, lsMatrix);
 
 	shader->setValue(20, 0); // diffuse texture to remove alpha for shadows.
-	for (auto model : models) {
-		auto instanceCount = model->getInstanceCount();
-		shader->setValue(0, model->getModelMatrix());
-		shader->setValue(1, instanceCount);
-		for (auto mesh : model->getMeshes()) {
-			mesh->getTextures()[0]->bind(0);
-			glBindVertexArray(mesh->getVAO());
-			if(instanceCount > 0)
+	for (auto tuple : Engine::getInstance()->getModelHandler()->getAllModels()) {
+		for (auto model : tuple.second) {
+			auto instanceCount = (unsigned int)tuple.second.size();
+			shader->setValue(0, model->getModelMatrix());
+			shader->setValue(1, instanceCount);
+			for (auto mesh : model->getMeshes()) {
+				mesh->getTextures()[Mesh::TextureLocation::diffuse]->bind(0);
+				glBindVertexArray(mesh->getVAO());
 				glDrawElementsInstanced(GL_TRIANGLES, (GLsizei)mesh->getIndices().size(), GL_UNSIGNED_INT, 0, (GLsizei)instanceCount);
-			else
-				glDrawElements(GL_TRIANGLES, (GLsizei)mesh->getIndices().size(), GL_UNSIGNED_INT, 0);
+			}
+			if (instanceCount > 1) // Ugly exit for instanced rendering.
+				break;
 		}
 	}
 	glBindVertexArray(0);
@@ -150,7 +154,7 @@ void Renderer::renderFullScreenQuad(const std::shared_ptr<Model>& quad) {
 	glViewport(0, 0, sizes.x, sizes.y); // change viewport back to screen size.
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
-	glDisable(GL_CULL_FACE); //Needs to add this if gaussian pass is off.
+	//glDisable(GL_CULL_FACE); //Needs to add this if gaussian pass is off.
 	
 	glBindVertexArray(quad->getMeshes()[0]->getVAO());
 	glDrawElements(GL_TRIANGLES, (GLsizei)quad->getMeshes()[0]->getIndices().size(), GL_UNSIGNED_INT, nullptr);

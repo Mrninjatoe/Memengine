@@ -14,6 +14,8 @@
 // Fix world picking actually using proper hitboxes.
 // Ambient occlusion (?)
 
+// TO-DO: Fix instanced rendering :)
+
 Engine* Engine::_instance;
 Engine::Engine() {
 
@@ -49,6 +51,7 @@ int Engine::run() {
 	float lowVSMValue = 0.2f;
 	float highVSMValue = 1.0f;
 	float variancePower = 0.00001f;
+	bool enablePicking = true;
 
 	while (!quit) {
 		LAST = NOW;
@@ -171,18 +174,26 @@ int Engine::run() {
 			ImGui::Text("VSM Attributes");
 			ImGui::SliderFloat("lowVSMValue", &lowVSMValue, 0.f, 1.0f);
 			ImGui::SliderFloat("highVSMValue", &highVSMValue, 0.f, 1.0f);
-			ImGui::SliderFloat("variancePower", &variancePower, 0.00001f, 1.0f, "%.5f");
+			ImGui::SliderFloat("variancePower", &variancePower, 0.00001f, 0.0001f, "%.5f");
 			ImGui::Text("Parallax Mapping Attributes");
 			ImGui::SliderFloat("HeightScale", &heightScale, 0.f, 1.f);
 			ImGui::SliderFloat("MinLayers", &minLayers, 1.f, 100.f);
 			ImGui::SliderFloat("MaxLayers", &maxLayers, 1.f, 100.f);
+			{
+				ImGui::BeginChild("World Settings");
+				ImGui::Text("Generic Entity Control");
+				ImGui::Checkbox("Enable World Picking", &enablePicking);
+				ImGui::EndChild();
+			}
 			ImGui::End();
+			_camera->enablePicking = enablePicking;
 			_shadowCaster->makeStatic(cascadeIsStatic);
 		}
 
 		_camera->update(deltaTime);
 		_shadowCaster->update(deltaTime);
 		_shadowCaster->createCascadeSplits(_camera); // Cascading shadow maps split per frame...
+		_modelHandler->updateInstancedModels();
 
 		{	// 1.0 Geometry pass
 			_normalShader->useProgram();
@@ -204,9 +215,9 @@ int Engine::run() {
 			_renderer->renderShadows(_models, _shadowShader, _shadowFramebuffer, _shadowCaster);
 		}
 
-		//{ // 2.5 Use gaussian filter to blur shadows for lighting pass.
-		//	_renderer->gaussianFilter(_shadowFramebuffer->getTexture(0), _quad, _gaussianFilterShader);
-		//}
+		{ // 2.5 Use gaussian filter to blur shadows for lighting pass.
+			_renderer->gaussianFilter(_shadowFramebuffer->getTexture(0), _quad, _gaussianFilterShader);
+		}
 
 		{ // 3.0 GBuffer textures, shadow map and other stuff.
 			_renderFBOShader->useProgram();
@@ -220,12 +231,12 @@ int Engine::run() {
 			_renderFBOShader->setValue(22, 2);
 			_renderFBOShader->setValue(23, 3);
 			_renderFBOShader->setValue(24, 4);
-			_geometryFramebuffer->getTexture(0)->bind(0);
-			_geometryFramebuffer->getTexture(1)->bind(1);
-			_geometryFramebuffer->getTexture(2)->bind(2);
-			_geometryFramebuffer->getTexture(3)->bind(3);
-			_shadowFramebuffer->getTexture(0)->bind(4, true);
-			//_renderer->getPingPongTexture()->bind(4, true);
+			_geometryFramebuffer->getTexture(Framebuffer::TextureAttachment::positions)->bind(0);
+			_geometryFramebuffer->getTexture(Framebuffer::TextureAttachment::normals)->bind(1);
+			_geometryFramebuffer->getTexture(Framebuffer::TextureAttachment::colors)->bind(2);
+			_geometryFramebuffer->getTexture(Framebuffer::TextureAttachment::depths)->bind(3);
+			//_shadowFramebuffer->getTexture(0)->bind(4, true);
+			_renderer->getPingPongTexture()->bind(4, true);
 
 			_renderFBOShader->setValue(25, _window->getSize());
 			_renderFBOShader->setValue(26, _camera->getViewMatrix());
@@ -283,6 +294,7 @@ void Engine::_init() {
 
 	_textureLoader = std::make_unique<TextureLoader>();
 	_meshLoader = std::make_unique<MeshLoader>();
+	_modelHandler = std::make_unique<ModelHandler>();
 	
 	_shadowShader = std::make_shared<ShaderProgram>("Shadow Pass");
 	_shadowShader->attachShader(ShaderProgram::ShaderType::VertexShader, "assets/shaders/shadowpass.vert")
@@ -320,6 +332,11 @@ void Engine::_init() {
 		.attachShader(ShaderProgram::ShaderType::GeometryShader, "assets/shaders/filter-gaussian.geom")
 		.attachShader(ShaderProgram::ShaderType::FragmentShader, "assets/shaders/filter-gaussian.frag")
 		.finalize();
+
+	_fxaaShader = std::make_shared<ShaderProgram>("FXAA Shader");
+	_fxaaShader->attachShader(ShaderProgram::ShaderType::VertexShader, "assets/shaders/fxaa.vert")
+		.attachShader(ShaderProgram::ShaderType::FragmentShader, "assets/shaders/fxaa.frag")
+		.finalize();
 	
 	_geometryFramebuffer = std::make_shared<Framebuffer>();
 	_geometryFramebuffer->createTexture(0, _window->getSize(), Texture::TextureFormat::RGBA32f) // Pos 0
@@ -327,7 +344,6 @@ void Engine::_init() {
 		.createTexture(2, _window->getSize(), Texture::TextureFormat::RGBA32f) // Color 2
 		.createTexture(3, _window->getSize(), Texture::TextureFormat::Depth32f) // Depth 3
 		.finalize();
-
 
 	_shadowCaster = std::make_shared<Shadowcaster>(4, 2048);
 
@@ -356,69 +372,31 @@ void Engine::_initGL() {
 	_renderer = std::make_unique<Renderer>(_window->getWindow());
 }
 void Engine::_initWorld() {
-	/*_models.push_back(_meshLoader->loadMesh("sheagle_box.fbx"));
-	_models[0]->setPosition(glm::vec3(0, 1, 0));
-	_models.push_back(_meshLoader->loadMesh("flipys_box.fbx"));
-	_models[1]->setPosition(glm::vec3(10, 1, 0));
-	_models.push_back(_meshLoader->loadMesh("box.fbx"));
-	_models[2]->setPosition(glm::vec3(0, 1, 10));
-	_models.push_back(_meshLoader->loadMesh("kuri_box.fbx"));
-	_models[3]->setPosition(glm::vec3(5, 1, 5));
-	_models.push_back(_meshLoader->loadMesh("wrench_box.fbx"));
-	_models[4]->setPosition(glm::vec3(-10, 1, 0));
-	_models.push_back(_meshLoader->loadMesh("cannon_box.fbx"));
-	_models[5]->setPosition(glm::vec3(0, 1, -10));
-	_models.push_back(_meshLoader->loadMesh("duck.fbx"));
-	_models[6]->setPosition(glm::vec3(-15, 5, 15)).setScaling(glm::vec3(5));
-	_models.push_back(_meshLoader->loadMesh("plane.fbx"));
-	_models[7]->setPosition(glm::vec3(0, 0, 0))
-		.setScaling(glm::vec3(200, 1, 200));
-	_models.push_back(_meshLoader->loadMesh("sheagle_box.fbx"));
-	_models[8]->setPosition(glm::vec3(8, 1, 8));*/
-	
-	/*_models.push_back(_meshLoader->loadMesh("brick_wall.obj"));
-	_models[0]->setPosition(glm::vec3(10, 5, 10)).setScaling(glm::vec3(2,2,1));
-	_models.push_back(_meshLoader->loadMesh("plane.fbx"));
-	_models[1]->setPosition(glm::vec3(0, 0, 0))
-		.setScaling(glm::vec3(2000, 1, 2000));
-	_models.push_back(_meshLoader->loadMesh("isak_tecken.fbx"));
-	_models[3]->setPosition(glm::vec3(25, 2, 25)).setScaling(glm::vec3(1));*/
-	
-	/*_models.push_back(_meshLoader->loadMesh("treeVersion2.fbx"));
-	_models[0]->setPosition(glm::vec3(30, 0, 15)).setScaling(glm::vec3(2));
-	_models.push_back(_meshLoader->loadMesh("treeVersion4.fbx"));
-	_models[1]->setPosition(glm::vec3(15, 0, 15)).setScaling(glm::vec3(2));
-	_models.push_back(_meshLoader->loadMesh("plane.fbx"));
-	_models[2]->setPosition(glm::vec3(0, 0, 0))
-		.setScaling(glm::vec3(2000, 1, 2000));
-	_models.push_back(_meshLoader->loadMesh("magicBox.obj"));
-	_models[3]->setPosition(glm::vec3(50, 5, 50));*/
-	//_models.push_back(_meshLoader->loadMesh("brick_wall.obj"));
-	//_models[1]->setPosition(glm::vec3(10, 5, 10)).setScaling(glm::vec3(2, 2, 1));
 
-	_models.push_back(_meshLoader->loadMesh("lowPolyTree.fbx"));
-	//_models.push_back(_meshLoader->loadMesh("isak_tecken.fbx"));
+	_modelHandler->createModel("lowPolyTree.fbx");
 
-	auto fRand = [](auto min, auto max) {
-		double f = (double)rand() / RAND_MAX;
-		return min + f * (max - min);
+	_modelHandler->createModel("plane.fbx")->setPosition(glm::vec3(0)).setScaling(glm::vec3(2000, 1, 2000));
+	_modelHandler->createModel("magicBox.obj")->setPosition(glm::vec3(0, 2, -5)).setScaling(glm::vec3(2));
+	_modelHandler->createModel("treeVersion4.fbx")->setPosition(glm::vec3(5, 0, 5)).setScaling(glm::vec3(2));
+	
+	auto fRand = [](float fMin, float fMax) {
+		float f = (float)rand() / RAND_MAX;
+		return fMin + f * (fMax - fMin);
 	};
 
+	for (int y = -10; y < 10; y++) {
+		for (int x = -10; x < 10; x++) {
+			//_modelHandler->createModel("lowPolyTree.fbx")
+			//	->setPosition(glm::vec3(x, 0, y) * fRand(-100, 100))
+			//	.setScaling(glm::vec3(1) * fRand(5, 10));
 
-	std::vector<glm::mat4> matrices;
-	for (int y = -50; y < 50; y++) {
-		for (int x = -50; x < 50; x++) {
-			glm::mat4 newScale = glm::scale(glm::vec3(1) + (float)abs(fRand(x, y)) );
-			glm::mat4 newTrans = glm::translate(glm::vec3(fRand(x, y) * 50, 0, fRand(x, y) *  50));
+			_modelHandler->createModel("lowPolyTree2.fbx")->setPosition(glm::vec3(x * fRand(-100, 100), 0, y * fRand(-100, 100)))
+				.setScaling(glm::vec3(1) * fRand(5, 10));
 
-			matrices.push_back(newTrans * newScale);
+			_modelHandler->createModel("lowPolyTree3.fbx")->setPosition(glm::vec3(x * fRand(-100, 100), 0, y * fRand(-100, 100)))
+				.setScaling(glm::vec3(1) * fRand(5, 10));
 		}
 	}
-	_models[0]->makeInstanceable(matrices);
-
-	_models.push_back(_meshLoader->loadMesh("plane.fbx"));
-	_models[1]->setPosition(glm::vec3(0, 0, 0))
-		.setScaling(glm::vec3(2000, 1, 2000));
 
 	_quad = _meshLoader->getFullscreenQuad();
 	_cubeMapModel = _meshLoader->loadMesh("cubeMapBox.fbx");

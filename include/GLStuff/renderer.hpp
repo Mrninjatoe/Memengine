@@ -22,7 +22,7 @@ public:
 	void showGuizmo(const std::shared_ptr<Camera>& camera);
 	void enableGaussianForVSM(const std::shared_ptr<Shadowcaster>& caster);
 	SDL_GLContext& getContext() { return _context; }
-	std::shared_ptr<Texture> getPingPongTexture() { return _pingPongBuffers[1]->getTexture(0); }
+	std::shared_ptr<Texture> getPingPongTexture() { return _pingPongBuffers[0]->getTexture(0); }
 private:
 	SDL_GLContext _context;
 

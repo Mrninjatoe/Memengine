@@ -1,8 +1,13 @@
 #include "model.hpp"
 
 Model::Model() : _pos(0,0,0), _scale(1), _radius(5.f), _orientation(glm::quat(glm::vec3(0,0,0))), _prevScale(_scale),
-	_isInstanced(false), _instanceCount(0){
-	_rotation = glm::rotate(0.f, glm::vec3(0,1,0));
+	_isInstanced(false),  _meshIdentifier(""){
+
+}
+
+Model::Model(const std::string& identifierName) : _pos(0, 0, 0), _scale(1), _radius(5.f), _orientation(glm::quat(glm::vec3(0, 0, 0))), _prevScale(_scale),
+_isInstanced(false),  _meshIdentifier(identifierName) {
+
 }
 
 Model::~Model() {
@@ -41,7 +46,11 @@ bool Model::sphereAgainstRay(const glm::vec3& rayDir, const glm::vec3& rayOrigin
 
 void Model::makeInstanceable(const std::vector<glm::mat4>& matrices) {
 	_isInstanced = true;
-	_instanceCount = (unsigned int)matrices.size();
 	for (auto mesh : _meshes)
 		mesh->setupInstancedBuffer(matrices);
+}
+
+void Model::updateInstanceInfo(const std::vector<glm::mat4>& matrices) {
+	for (auto mesh : _meshes)
+		mesh->updateInstancedBufferFull(matrices);
 }

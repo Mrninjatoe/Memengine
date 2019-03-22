@@ -42,6 +42,7 @@ public:
 	bool zPressed = false;
 	bool xPressed = false;
 	bool cPressed = false;
+	bool enablePicking = true;
 
 	float timeCounter;
 private:

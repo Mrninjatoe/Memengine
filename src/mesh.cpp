@@ -55,7 +55,7 @@ void Mesh::setupInstancedBuffer(const std::vector<glm::mat4>& matrices) {
 
 	glGenBuffers(1, &_extraBuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, _extraBuffer);
-	glBufferData(GL_ARRAY_BUFFER, matrices.size() * sizeof(glm::mat4), &matrices[0], GL_STATIC_DRAW); // Might change to stream_draw later. :)
+	glBufferData(GL_ARRAY_BUFFER, matrices.size() * sizeof(glm::mat4), &matrices[0], GL_DYNAMIC_DRAW); // Might change to stream_draw later. :)
 
 	auto vec4Size = sizeof(glm::vec4);
 
@@ -78,6 +78,16 @@ void Mesh::setupInstancedBuffer(const std::vector<glm::mat4>& matrices) {
 
 	glBindVertexArray(0);
 }
+
+void Mesh::updateInstancedBufferFull(const std::vector<glm::mat4>& matrices) {
+	glBindBuffer(GL_ARRAY_BUFFER, _extraBuffer);
+	glBufferData(GL_ARRAY_BUFFER, matrices.size() * sizeof(glm::mat4), &matrices[0], GL_DYNAMIC_DRAW);
+}
+
+void Mesh::updateInstancedBufferOffset(const glm::ivec2& offset, const glm::mat4& matrix) {
+	
+}
+
 
 void Mesh::addTexture(const std::shared_ptr<Texture>& tex) {
 	_textures.push_back(tex);

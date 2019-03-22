@@ -10,6 +10,13 @@ public:
 	//	texture2D = GL_TEXTURE_2D,
 	//	textureArray2D
 	//};
+	const enum TextureAttachment : const int {
+		positions = 0,
+		normals = 1,
+		colors = 2,
+		depths = 3
+	};
+
 	Framebuffer();
 	Framebuffer(const std::string& name);
 	virtual ~Framebuffer();

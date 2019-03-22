@@ -10,6 +10,7 @@
 #include "pointlight.hpp"
 #include "GLStuff/uniformbuffer.hpp"
 #include "shadowcaster.hpp"
+#include "modelhandler.hpp"
 
 class Engine {
 	public:
@@ -32,10 +33,11 @@ class Engine {
 			return _instance;
 		}
 		int run();
-		Window* getWindow() { return _window.get(); }
-		Renderer* getRenderer() { return _renderer.get(); }
-		MeshLoader* getMeshLoader() { return _meshLoader.get(); }
-		TextureLoader* getTextureLoader() { return _textureLoader.get(); }
+		inline Window* getWindow() { return _window.get(); }
+		inline Renderer* getRenderer() { return _renderer.get(); }
+		inline MeshLoader* getMeshLoader() { return _meshLoader.get(); }
+		inline TextureLoader* getTextureLoader() { return _textureLoader.get(); }
+		inline ModelHandler* getModelHandler() { return _modelHandler.get(); }
 		std::vector<std::shared_ptr<Model>>& getWorldObjects() { return _models; }
 	private:
 		void _init();
@@ -48,6 +50,7 @@ class Engine {
 		std::unique_ptr<Renderer> _renderer;
 		std::unique_ptr<TextureLoader> _textureLoader;
 		std::unique_ptr<MeshLoader> _meshLoader;
+		std::unique_ptr<ModelHandler> _modelHandler;
 
 		std::shared_ptr<ShaderProgram> _shadowShader;
 		std::shared_ptr<ShaderProgram> _cShadowDebugShader;
@@ -56,6 +59,7 @@ class Engine {
 		std::shared_ptr<ShaderProgram> _renderFBOShader;
 		std::shared_ptr<ShaderProgram> _cubemapShader;
 		std::shared_ptr<ShaderProgram> _gaussianFilterShader;
+		std::shared_ptr<ShaderProgram> _fxaaShader;
 		std::shared_ptr<Framebuffer> _shadowFramebuffer;
 		std::shared_ptr<Framebuffer> _geometryFramebuffer;
 		std::shared_ptr<Texture> _cubeMapTexture;
@@ -63,9 +67,9 @@ class Engine {
 		std::shared_ptr<Model> _quad;
 		std::shared_ptr<Model> _cubeMapModel;
 		std::vector<std::shared_ptr<Model>> _models;
-		std::vector<std::shared_ptr<Model>> _instancedModels;
-		std::vector<std::shared_ptr<Pointlight>> _lights;
+		std::vector<glm::mat4> _tempMatrices;
 
 		std::shared_ptr<Camera> _camera;
 		std::shared_ptr<Shadowcaster> _shadowCaster;
+		std::vector<std::shared_ptr<Pointlight>> _lights;
 };

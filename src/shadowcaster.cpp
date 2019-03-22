@@ -10,9 +10,7 @@
 
 
 // Still a bit broken, too big difference between orthographic boxes.
-// CURRENT PROBLEM: SPLIT 1,2, AND 3 ARE TOO LARGE.
-// HAS TO DO WITH SOMETHING. 
-
+// Will probably fix it by making it static whenever I am done with my scenes.
 
 Shadowcaster::Shadowcaster() : _pos(0, 1.f, -1.f), _timeCounter(0), 
 numCascadeSplits(4), _resolution(1024){
@@ -38,7 +36,7 @@ void Shadowcaster::update(float dt) {
 	_pos.x = camX;
 	_pos.z = camZ;
 
-	_timeCounter += 1 * dt;
+	_timeCounter += 1 * dt * 0.3f;
 }
 
 void Shadowcaster::createCascadeSplits(const std::shared_ptr<Camera>& playerCamera) {

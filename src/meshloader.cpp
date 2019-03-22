@@ -27,7 +27,7 @@ std::shared_ptr<Model> MeshLoader::loadMesh(const std::string& fileName){
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 		printf("ERROR::ASSIMP::%s", aiGetErrorString());
 
-	_models[fileName] = Model();
+	_models[fileName] = Model(fileName);
 	_processNode(scene->mRootNode, scene, fileName);
 
 	return std::make_shared<Model>(_models[fileName]);

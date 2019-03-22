@@ -28,7 +28,7 @@ void Camera::update(float dt) {
 		_cameraMovements(dt);
 	}
 	else {
-		if (leftClick && untargeted)
+		if (leftClick && untargeted && enablePicking)
 			_pickWorld();
 	}
 
@@ -68,12 +68,14 @@ void Camera::_pickWorld() {
 	rayEye.z = -1; // Forward in world space.
 	rayEye.w = 0.f; // not a point.
 	glm::vec3 rayWorld = glm::normalize(glm::inverse(this->getViewMatrix()) * rayEye);
-	auto models = Engine::getInstance()->getWorldObjects();
-	for (auto model : models) {
-		if (model->sphereAgainstRay(rayWorld, this->pos)) {
-			currentTarget = model;
-			untargeted = false;
-			break;
+	auto mapContainer = Engine::getInstance()->getModelHandler()->getAllModels();
+	for (auto tuple : mapContainer) {
+		for (auto model : tuple.second) {
+			if (model->sphereAgainstRay(rayWorld, this->pos)) {
+				currentTarget = model;
+				untargeted = false;
+				break;
+			}
 		}
 	}
 }
