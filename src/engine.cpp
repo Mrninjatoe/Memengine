@@ -52,7 +52,10 @@ int Engine::run() {
 	float highVSMValue = 1.0f;
 	float variancePower = 0.00001f;
 	bool enablePicking = true;
-
+	//FXAA
+	float fxaaSpanMax = 8.f;
+	float fxaaReduceMin = 1.f / 128.f;
+	float fxaaReduceMul = 1.f / 8.f;
 	while (!quit) {
 		LAST = NOW;
 		NOW = SDL_GetPerformanceCounter();
@@ -170,16 +173,26 @@ int Engine::run() {
 				ImGui::SliderFloat("Lambda", &_shadowCaster->lambda, 0.f, 1.0f);
 				ImGui::SliderFloat("Min Distance", &_shadowCaster->minDistance, 0.f, 1.0f);
 				ImGui::SliderFloat("Max Distance", &_shadowCaster->maxDistance, 0.f, 1.0f);
+			} 
+			{ // VSM
+				ImGui::Text("VSM Attributes");
+				ImGui::SliderFloat("lowVSMValue", &lowVSMValue, 0.f, 1.0f);
+				ImGui::SliderFloat("highVSMValue", &highVSMValue, 0.f, 1.0f);
+				ImGui::SliderFloat("variancePower", &variancePower, 0.00001f, 0.0001f, "%.5f");
+				ImGui::Text("Parallax Mapping Attributes");
+				ImGui::SliderFloat("HeightScale", &heightScale, 0.f, 1.f);
+				ImGui::SliderFloat("MinLayers", &minLayers, 1.f, 100.f);
+				ImGui::SliderFloat("MaxLayers", &maxLayers, 1.f, 100.f);
 			}
-			ImGui::Text("VSM Attributes");
-			ImGui::SliderFloat("lowVSMValue", &lowVSMValue, 0.f, 1.0f);
-			ImGui::SliderFloat("highVSMValue", &highVSMValue, 0.f, 1.0f);
-			ImGui::SliderFloat("variancePower", &variancePower, 0.00001f, 0.0001f, "%.5f");
-			ImGui::Text("Parallax Mapping Attributes");
-			ImGui::SliderFloat("HeightScale", &heightScale, 0.f, 1.f);
-			ImGui::SliderFloat("MinLayers", &minLayers, 1.f, 100.f);
-			ImGui::SliderFloat("MaxLayers", &maxLayers, 1.f, 100.f);
-			{
+			{ // FXAA
+				ImGui::BeginChild("FXAA Settings");
+				ImGui::Text("FXAA Attributes");
+				ImGui::SliderFloat("fxaaSpanMax", &fxaaSpanMax, 1.f, 16.f);
+				ImGui::SliderFloat("fxaaReduceMin", &fxaaReduceMin, 1.f / 128.f, 1.f / 16.f);
+				ImGui::SliderFloat("fxaaReduceMul", &fxaaReduceMul, 1.f / 8.f, 1.f / 2.f);
+				ImGui::EndChild();
+			}
+			{ // World picking stuff
 				ImGui::BeginChild("World Settings");
 				ImGui::Text("Generic Entity Control");
 				ImGui::Checkbox("Enable World Picking", &enablePicking);
@@ -259,10 +272,26 @@ int Engine::run() {
 				_renderFBOShader->setValue(lightShaderPos++, light->color);
 			}
 
+			_lightingFramebuffer->bind();
 			_renderer->renderFullScreenQuad(_quad);
 		}
 
-		{	// 4.0 Cube map memes
+		{	// 4.0 FXAA Post Processing
+			auto sceneTexture = _lightingFramebuffer->getTexture(0);
+			auto textureSizes = sceneTexture->getSize();
+			_fxaaShader->useProgram();
+			_fxaaShader->setValue(15, fxaaSpanMax);
+			_fxaaShader->setValue(16, fxaaReduceMin);
+			_fxaaShader->setValue(17, fxaaReduceMul);
+			_fxaaShader->setValue(18, glm::vec2(1.f / textureSizes.x, 1.f / textureSizes.y));
+			_fxaaShader->setValue(20, 0);
+			_fxaaShader->setValue(21, 1);
+			sceneTexture->bind(0);
+			_geometryFramebuffer->getTexture(Framebuffer::TextureAttachment::depths)->bind(1);
+			_renderer->postProcessFXAA(_quad);
+		}
+
+		{	// 5.0 Cube map memes
 			_cubemapShader->useProgram();
 			_cubemapShader->setValue(0, glm::mat4(glm::mat3(_camera->getViewMatrix())));
 			_cubemapShader->setValue(1, _camera->getProjectionMatrix());
@@ -354,6 +383,10 @@ void Engine::_init() {
 	_shadowFramebuffer->attachTexture(0, shadowMapTex)
 		.createTexture(1, glm::ivec2(_shadowCaster->getResolution()), Texture::TextureFormat::Depth32f, true).finalize();
 
+	_lightingFramebuffer = std::make_shared<Framebuffer>();
+	_lightingFramebuffer->createTexture(0, _window->getSize(), Texture::TextureFormat::RGBA32f)
+		.finalize();
+
 	_cubeMapTexture = _textureLoader->loadCubeMapTexture("skybox");
 
 	_camera = std::make_shared<Camera>();
@@ -372,9 +405,6 @@ void Engine::_initGL() {
 	_renderer = std::make_unique<Renderer>(_window->getWindow());
 }
 void Engine::_initWorld() {
-
-	_modelHandler->createModel("lowPolyTree.fbx");
-
 	_modelHandler->createModel("plane.fbx")->setPosition(glm::vec3(0)).setScaling(glm::vec3(2000, 1, 2000));
 	_modelHandler->createModel("magicBox.obj")->setPosition(glm::vec3(0, 2, -5)).setScaling(glm::vec3(2));
 	_modelHandler->createModel("treeVersion4.fbx")->setPosition(glm::vec3(5, 0, 5)).setScaling(glm::vec3(2));
@@ -384,16 +414,21 @@ void Engine::_initWorld() {
 		return fMin + f * (fMax - fMin);
 	};
 
+	const std::string treePaths[3] = { "lowPolyTree4.fbx", "lowPolyTree5.fbx", "lowPolyTree6.fbx"};
+
 	for (int y = -10; y < 10; y++) {
 		for (int x = -10; x < 10; x++) {
 			//_modelHandler->createModel("lowPolyTree.fbx")
 			//	->setPosition(glm::vec3(x, 0, y) * fRand(-100, 100))
 			//	.setScaling(glm::vec3(1) * fRand(5, 10));
 
-			_modelHandler->createModel("lowPolyTree2.fbx")->setPosition(glm::vec3(x * fRand(-100, 100), 0, y * fRand(-100, 100)))
-				.setScaling(glm::vec3(1) * fRand(5, 10));
+			/*_modelHandler->createModel("lowPolyTree4.fbx")->setPosition(glm::vec3(x * fRand(-100, 100), 0, y * fRand(-100, 100)))
+				.setScaling(glm::vec3(1) * fRand(5, 10));*/
 
-			_modelHandler->createModel("lowPolyTree3.fbx")->setPosition(glm::vec3(x * fRand(-100, 100), 0, y * fRand(-100, 100)))
+			//_modelHandler->createModel("lowPolyTree6.fbx")->setPosition(glm::vec3(x * fRand(-100, 100), 0, y * fRand(-100, 100)))
+			//	.setScaling(glm::vec3(1) * fRand(5, 10));
+
+			_modelHandler->createModel(treePaths[int(fRand(0, 3))])->setPosition(glm::vec3(x * fRand(-100, 100), 0, y * fRand(-100, 100)))
 				.setScaling(glm::vec3(1) * fRand(5, 10));
 		}
 	}

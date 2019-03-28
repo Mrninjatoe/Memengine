@@ -17,8 +17,8 @@ public:
 		const std::shared_ptr<Framebuffer>& fbo, const std::shared_ptr<Shadowcaster>& caster);
 	void gaussianFilter(const std::shared_ptr<Texture>& toBlur, const std::shared_ptr<Model>& quad, const std::shared_ptr<ShaderProgram>& gaussianShader);
 	void renderFullScreenQuad(const std::shared_ptr<Model>& quad);
+	void postProcessFXAA(const std::shared_ptr<Model>& quad);
 	void renderCubemap(const std::shared_ptr<Model>& cubemapModel);
-
 	void showGuizmo(const std::shared_ptr<Camera>& camera);
 	void enableGaussianForVSM(const std::shared_ptr<Shadowcaster>& caster);
 	SDL_GLContext& getContext() { return _context; }

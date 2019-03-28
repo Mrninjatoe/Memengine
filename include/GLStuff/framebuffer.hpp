@@ -31,7 +31,6 @@ public:
 	void finalize();
 private:
 	GLuint _fbo;
-	//FramebufferTextureType _type;
 	glm::ivec2 _size;
 	std::vector<std::shared_ptr<Texture>> _textureAttachments;
 	std::string _name;

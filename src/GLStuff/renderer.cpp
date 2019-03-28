@@ -60,7 +60,7 @@ void Renderer::render(const std::vector<std::shared_ptr<Model>>& models, const s
 	// Write to depth, do depth test, cull back.
 	const auto& sizes = Engine::getInstance()->getWindow()->getSize();
 	glViewport(0, 0, sizes.x, sizes.y);
-	//glClearColor(1,1,1,1);
+	glClearColor(0,0,0,0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	//glDisable(GL_CULL_FACE);
 	shader->setValue(20, 0); // diff
@@ -132,7 +132,7 @@ void Renderer::gaussianFilter(const std::shared_ptr<Texture>& toBlur, const std:
 	unsigned int amount = 1 * 2;
 	glm::vec2 direction = {0,0};
 	bool horizontal = true, firstIteration = true;
-	gaussianShader->setValue(2, 1.f);
+	gaussianShader->setValue(2, 0.5f);
 	glDisable(GL_CULL_FACE);
 	for (unsigned int i = 0; i < amount; i++) {
 		horizontal ? direction = glm::vec2(1, 0) : direction = glm::vec2(0, 1);
@@ -149,9 +149,9 @@ void Renderer::gaussianFilter(const std::shared_ptr<Texture>& toBlur, const std:
 
 void Renderer::renderFullScreenQuad(const std::shared_ptr<Model>& quad) {
 	// Write to depth, depth test, cull nothing.
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	const auto& sizes = Engine::getInstance()->getWindow()->getSize();
 	glViewport(0, 0, sizes.x, sizes.y); // change viewport back to screen size.
+	glClearColor(0,0,0,1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
 	//glDisable(GL_CULL_FACE); //Needs to add this if gaussian pass is off.
@@ -161,9 +161,26 @@ void Renderer::renderFullScreenQuad(const std::shared_ptr<Model>& quad) {
 	glBindVertexArray(0);
 }
 
+void Renderer::postProcessFXAA(const std::shared_ptr<Model>& quad) {
+	// Don't write to depth, no depth test, cull nothing. Don't clear (?)
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	const auto& sizes = Engine::getInstance()->getWindow()->getSize();
+	glViewport(0, 0, sizes.x, sizes.y); // change viewport back to screen size.
+
+	glDepthFunc(GL_ALWAYS);
+	glDepthMask(GL_TRUE);
+
+	glBindVertexArray(quad->getMeshes()[0]->getVAO());
+	glDrawElements(GL_TRIANGLES, (GLsizei)quad->getMeshes()[0]->getIndices().size(), GL_UNSIGNED_INT, nullptr);
+	glBindVertexArray(0);
+
+	//glEnable(GL_CULL_FACE);
+	//glCullFace(GL_BACK);
+	// Depthfunc changes in cubemap rendering.
+}
+
 void Renderer::renderCubemap(const std::shared_ptr<Model>& cubemapModel) {
 	// Read from depth, do depth test (equal), cull nothing.
-	glDepthMask(GL_FALSE);
 	glDepthFunc(GL_LEQUAL);
 
 	glBindVertexArray(cubemapModel->getMeshes()[0]->getVAO());
@@ -171,7 +188,7 @@ void Renderer::renderCubemap(const std::shared_ptr<Model>& cubemapModel) {
 	glBindVertexArray(0);
 
 	glDepthFunc(GL_LESS);
-	glDepthMask(GL_TRUE);
+	//glDepthMask(GL_TRUE);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 }

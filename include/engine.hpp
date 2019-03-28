@@ -26,7 +26,7 @@ class Engine {
 			printf("Done deleting member variable for the Engine!\n");
 		}
 
-		static Engine* getInstance() {
+		static Engine*getInstance() {
 			if (!_instance)
 				_instance = new Engine();
 
@@ -62,6 +62,7 @@ class Engine {
 		std::shared_ptr<ShaderProgram> _fxaaShader;
 		std::shared_ptr<Framebuffer> _shadowFramebuffer;
 		std::shared_ptr<Framebuffer> _geometryFramebuffer;
+		std::shared_ptr<Framebuffer> _lightingFramebuffer;
 		std::shared_ptr<Texture> _cubeMapTexture;
 
 		std::shared_ptr<Model> _quad;

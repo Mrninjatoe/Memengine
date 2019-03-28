@@ -18,5 +18,4 @@ private:
 	int _screenWidth = 1280;
 	int _screenHeight = 720;
 	bool _fullscreen = false;
-
 };

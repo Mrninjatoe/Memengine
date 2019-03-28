@@ -35,7 +35,7 @@ void ModelHandler::updateInstancedModels() {
 
 		if (!tuple.second[0]->isInstanced())
 			tuple.second[0]->makeInstanceable(newMatrices);
-		else if (tuple.second[0]->isInstanced())
+		else
 			tuple.second[0]->updateInstanceInfo(newMatrices);
 	}
 }

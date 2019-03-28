@@ -178,12 +178,6 @@ private:
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		}
-
-		float amount = 4.f;
-		float supportedMax = 0.f;
-		glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &supportedMax);
-		amount = glm::min(amount, supportedMax);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, amount);
 		
 		glTexStorage2D(GL_TEXTURE_2D, 1, toGLInternal(_format), _size.x, _size.y);
 		glBindTexture(GL_TEXTURE_2D, 0);
@@ -195,13 +189,6 @@ private:
 		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-		// Anistrophic
-		float amount = 4.f;
-		float supportedMax = 0.f;
-		glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &supportedMax);
-		amount = glm::min(amount, supportedMax);
-		glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_ANISOTROPY_EXT, amount);
 
 		glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, toGLInternal(_format), 
 			_size.x, _size.y, 4);
