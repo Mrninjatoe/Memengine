@@ -344,8 +344,8 @@ void Engine::_init() {
 		.finalize();
 
 	_normalShader = std::make_shared<ShaderProgram>("Test Pass");
-	_normalShader->attachShader(ShaderProgram::ShaderType::VertexShader, "assets/shaders/normal.vert")
-		.attachShader(ShaderProgram::ShaderType::FragmentShader, "assets/shaders/normal.frag")
+	_normalShader->attachShader(ShaderProgram::ShaderType::VertexShader, "assets/shaders/geometrypass.vert")
+		.attachShader(ShaderProgram::ShaderType::FragmentShader, "assets/shaders/geometrypass.frag")
 		.finalize();
 
 	_renderFBOShader = std::make_shared<ShaderProgram>("Render FBO pass");
