@@ -32,7 +32,8 @@
 *.app
 
 # Other stuff
-*assets/
+assets/textures/
+assets/models/
 *bin/
 *x64/
 *.vs/

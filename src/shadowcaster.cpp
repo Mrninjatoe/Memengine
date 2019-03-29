@@ -29,14 +29,16 @@ Shadowcaster::~Shadowcaster(){
 }
 
 void Shadowcaster::update(float dt) {
-	/*float radius = 1.f;
-	float camX = sin(_timeCounter) * radius;
-	float camZ = cos(_timeCounter) * radius;
+	if (!_stopRotation) {
+		float radius = 1.f;
+		float camX = sin(_timeCounter) * radius;
+		float camZ = cos(_timeCounter) * radius;
 
-	_pos.x = camX;
-	_pos.z = camZ;
+		_pos.x = camX;
+		_pos.z = camZ;
 
-	_timeCounter += 1 * dt * 0.3f;*/
+		_timeCounter += 1 * dt * 0.15f;
+	}
 }
 
 void Shadowcaster::createCascadeSplits(const std::shared_ptr<Camera>& playerCamera) {

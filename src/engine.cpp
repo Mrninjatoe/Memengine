@@ -56,6 +56,7 @@ int Engine::run() {
 	float fxaaSpanMax = 8.f;
 	float fxaaReduceMin = 1.f / 128.f;
 	float fxaaReduceMul = 1.f / 8.f;
+
 	while (!quit) {
 		LAST = NOW;
 		NOW = SDL_GetPerformanceCounter();
@@ -183,13 +184,14 @@ int Engine::run() {
 				ImGui::SliderFloat("HeightScale", &heightScale, 0.f, 1.f);
 				ImGui::SliderFloat("MinLayers", &minLayers, 1.f, 100.f);
 				ImGui::SliderFloat("MaxLayers", &maxLayers, 1.f, 100.f);
+				ImGui::Checkbox("Stop Sun Rotation", &_shadowCaster->getRotation());
 			}
 			{ // FXAA
 				ImGui::BeginChild("FXAA Settings");
 				ImGui::Text("FXAA Attributes");
 				ImGui::SliderFloat("fxaaSpanMax", &fxaaSpanMax, 1.f, 16.f);
-				ImGui::SliderFloat("fxaaReduceMin", &fxaaReduceMin, 1.f / 128.f, 1.f / 16.f);
-				ImGui::SliderFloat("fxaaReduceMul", &fxaaReduceMul, 1.f / 8.f, 1.f / 2.f);
+				ImGui::SliderFloat("fxaaReduceMin", &fxaaReduceMin, 1.f / 256.f, 1.f / 128.f);
+				ImGui::SliderFloat("fxaaReduceMul", &fxaaReduceMul, 1.f / 8.f, 1.f / 1.f);
 				ImGui::EndChild();
 			}
 			{ // World picking stuff
@@ -406,7 +408,7 @@ void Engine::_initGL() {
 }
 void Engine::_initWorld() {
 	_modelHandler->createModel("plane.fbx")->setPosition(glm::vec3(0)).setScaling(glm::vec3(2000, 1, 2000));
-	_modelHandler->createModel("magicBox.obj")->setPosition(glm::vec3(0, 2, -5)).setScaling(glm::vec3(2));
+	_modelHandler->createModel("magicBox.obj")->setPosition(glm::vec3(0, 10, -5)).setScaling(glm::vec3(2));
 	_modelHandler->createModel("treeVersion4.fbx")->setPosition(glm::vec3(5, 0, 5)).setScaling(glm::vec3(2));
 	
 	auto fRand = [](float fMin, float fMax) {

@@ -18,6 +18,7 @@ public:
 	void makeStatic(const bool& condition);
 	inline bool& isStatic() { return _static; }
 	inline int getResolution() { return _resolution; }
+	bool& getRotation() { return _stopRotation; }
 
 	float lambda = 1.f;
 	float minDistance = 0.f;
@@ -30,6 +31,7 @@ private:
 	std::vector<float> _cascadedSplits;
 	std::vector<glm::mat4> _cascadedViewProjs;
 	float _timeCounter;
+	bool  _stopRotation = false;
 	int _resolution; // Always *2 for width/height.
 
 	void _initialize();
