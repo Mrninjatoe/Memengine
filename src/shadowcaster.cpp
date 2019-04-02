@@ -12,7 +12,7 @@
 // Still a bit broken, too big difference between orthographic boxes.
 // Will probably fix it by making it static whenever I am done with my scenes.
 
-Shadowcaster::Shadowcaster() : _pos(0, 1.f, -1.f), _timeCounter(0), 
+Shadowcaster::Shadowcaster() : _pos(0, 0, -1.f), _timeCounter(0), 
 numCascadeSplits(4), _resolution(1024){
 	_initialize();
 }
@@ -31,13 +31,13 @@ Shadowcaster::~Shadowcaster(){
 void Shadowcaster::update(float dt) {
 	if (!_stopRotation) {
 		float radius = 1.f;
-		float camX = sin(_timeCounter) * radius;
+		float camY = sin(_timeCounter) * radius;
 		float camZ = cos(_timeCounter) * radius;
 
-		_pos.x = camX;
+		_pos.y = camY;
 		_pos.z = camZ;
 
-		_timeCounter += 1 * dt * 0.15f;
+		_timeCounter += 1 * dt * 0.1f;
 	}
 }
 

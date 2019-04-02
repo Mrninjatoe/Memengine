@@ -19,6 +19,7 @@ public:
 	void renderFullScreenQuad(const std::shared_ptr<Model>& quad);
 	void postProcessFXAA(const std::shared_ptr<Model>& quad);
 	void renderCubemap(const std::shared_ptr<Model>& cubemapModel);
+	void renderSingle(const std::shared_ptr<Model>& model); // super hacky for now I really need to clean up my code...
 	void showGuizmo(const std::shared_ptr<Camera>& camera);
 	void enableGaussianForVSM(const std::shared_ptr<Shadowcaster>& caster);
 	SDL_GLContext& getContext() { return _context; }

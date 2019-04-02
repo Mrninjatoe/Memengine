@@ -43,6 +43,9 @@ public:
 	glm::vec3 getPrevScaling() {
 		return _prevScale;
 	}
+	glm::vec3 getPosition() {
+		return _pos;
+	}
 	void setPrevScaling(const glm::vec3& newScale) {
 		_prevScale = newScale;
 	}

@@ -120,12 +120,8 @@ void main(){
 		else if(result.w == 4)
 			cascadeColor = vec3(0.2, 0.2, 0);
 	}
-//	float alphaTemp = texture(colors, vUV).a;
-//	if(alphaTemp < 0.1)
-//		discard;
 
 	//outColor = vec4(cascadedSplits[0], cascadedSplits[1], cascadedSplits[2], 1);
 	//outColor = texture(normals, vUV);
-	outColor = vec4(result.rgb, 1);
-	//gl_FragDepth = texture(depths, vUV).r; // Output depth into framebuffer 0.
+	outColor = vec4(result.rgb + cascadeColor, 1);
 }

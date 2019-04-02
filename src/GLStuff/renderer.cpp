@@ -162,10 +162,7 @@ void Renderer::renderFullScreenQuad(const std::shared_ptr<Model>& quad) {
 }
 
 void Renderer::postProcessFXAA(const std::shared_ptr<Model>& quad) {
-	// Don't write to depth, no depth test, cull nothing. Don't clear (?)
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	const auto& sizes = Engine::getInstance()->getWindow()->getSize();
-	glViewport(0, 0, sizes.x, sizes.y); // change viewport back to screen size.
 
 	glDepthFunc(GL_ALWAYS);
 	glDepthMask(GL_TRUE);
@@ -178,19 +175,39 @@ void Renderer::postProcessFXAA(const std::shared_ptr<Model>& quad) {
 	//glCullFace(GL_BACK);
 	// Depthfunc changes in cubemap rendering.
 }
-
+ // fix dis
 void Renderer::renderCubemap(const std::shared_ptr<Model>& cubemapModel) {
 	// Read from depth, do depth test (equal), cull nothing.
 	glDepthFunc(GL_LEQUAL);
+	glDepthMask(GL_FALSE);
 
 	glBindVertexArray(cubemapModel->getMeshes()[0]->getVAO());
 	glDrawElements(GL_TRIANGLES, (GLsizei)cubemapModel->getMeshes()[0]->getIndices().size(), GL_UNSIGNED_INT, nullptr);
 	glBindVertexArray(0);
 
 	glDepthFunc(GL_LESS);
-	//glDepthMask(GL_TRUE);
+	glDepthMask(GL_TRUE);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
+}
+
+void Renderer::renderSingle(const std::shared_ptr<Model>& model) {
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glDepthFunc(GL_LEQUAL);
+	glDepthMask(GL_FALSE);
+	glDisable(GL_CULL_FACE);
+	//glDisable(GL_CULL_FACE);
+	//glDepthMask(GL_FALSE);
+
+	glBindVertexArray(model->getMeshes()[0]->getVAO());
+	glDrawElements(GL_TRIANGLES, (GLsizei)model->getMeshes()[0]->getIndices().size(), GL_UNSIGNED_INT, nullptr);
+	glBindVertexArray(0);
+
+	glDepthFunc(GL_LESS);
+	glDepthMask(GL_TRUE);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+	//glDepthMask(GL_TRUE);
 }
 
 void Renderer::showGuizmo(const std::shared_ptr<Camera>& camera) {
@@ -198,7 +215,7 @@ void Renderer::showGuizmo(const std::shared_ptr<Camera>& camera) {
 	if (currentlySelected == nullptr)
 		return;
 
-	static ImGuizmo::OPERATION currentOperation(ImGuizmo::SCALE);
+	static ImGuizmo::OPERATION currentOperation(ImGuizmo::TRANSLATE);
 	static ImGuizmo::MODE currentMode(ImGuizmo::WORLD);
 	ImGui::Begin("Camera's Selected Entity");
 	ImGui::Text("Z: Translate, X: Rotate, C: Scale.");

@@ -1,7 +1,5 @@
 #version 440 core
 
-// 4x Anistrophic filtering is enabled.
-
 out vec4 outColor;
 
 in vec2 vUV;

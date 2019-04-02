@@ -57,6 +57,22 @@ int Engine::run() {
 	float fxaaReduceMin = 1.f / 128.f;
 	float fxaaReduceMul = 1.f / 8.f;
 
+	// Scattering memes;
+	float innerRadius = 1000.f;
+	float outerRadius = innerRadius + ((innerRadius / 100) * 2.5f); // Outer radius.
+	const float waveLengthR = 1.f / pow(0.65f, 4);
+	const float waveLengthG = 1.f / pow(0.57f, 4);
+	const float waveLengthB = 1.f / pow(0.475f, 4); // :thinking:
+	printf("%f\n", waveLengthR);
+	printf("%f\n", waveLengthG);
+	printf("%f\n", waveLengthB);
+	float fScale = 1 / (outerRadius - innerRadius);
+	float fScaleDepth = 0.25f; // The altitude which the average density is at.
+	const float rayleighConstant = 0.0025f; // 2.5%
+	const float mieConstant = 0.0010f;
+	float sunIntensity = 30.f;
+	const float g = -0.990f; // Mie phas asymmetry factor. Between 0.999 to -0.999 if it is 1 or -1 it'll break.
+
 	while (!quit) {
 		LAST = NOW;
 		NOW = SDL_GetPerformanceCounter();
@@ -250,7 +266,6 @@ int Engine::run() {
 			_geometryFramebuffer->getTexture(Framebuffer::TextureAttachment::normals)->bind(1);
 			_geometryFramebuffer->getTexture(Framebuffer::TextureAttachment::colors)->bind(2);
 			_geometryFramebuffer->getTexture(Framebuffer::TextureAttachment::depths)->bind(3);
-			//_shadowFramebuffer->getTexture(0)->bind(4, true);
 			_renderer->getPingPongTexture()->bind(4, true);
 
 			_renderFBOShader->setValue(25, _window->getSize());
@@ -293,15 +308,48 @@ int Engine::run() {
 			_renderer->postProcessFXAA(_quad);
 		}
 
-		{	// 5.0 Cube map memes
-			_cubemapShader->useProgram();
-			_cubemapShader->setValue(0, glm::mat4(glm::mat3(_camera->getViewMatrix())));
-			_cubemapShader->setValue(1, _camera->getProjectionMatrix());
-			_cubemapShader->setValue(20, 0);
-			_cubeMapTexture->bindCubemap(0);
+		{	// Temp memes
+			_atmosphericScatteringShader->useProgram();
+			_atmosphericScatteringShader->setValue(0, _camera->getViewMatrix());
+			_atmosphericScatteringShader->setValue(1, _camera->getProjectionMatrix());
+			_atmosphericScatteringShader->setValue(2, _skydome->getModelMatrix());
+			_atmosphericScatteringShader->setValue(3, _camera->pos);
+			_atmosphericScatteringShader->setValue(4, -glm::normalize(_shadowCaster->getPos())); // lightdir.
+			_atmosphericScatteringShader->setValue(5, glm::vec3(waveLengthR, waveLengthG, waveLengthB));
+			_atmosphericScatteringShader->setValue(6, glm::length(_camera->pos.y));
+			_atmosphericScatteringShader->setValue(7, pow(glm::length(_camera->pos.y), 2));
+			_atmosphericScatteringShader->setValue(8, outerRadius); // Outer radius.
+			_atmosphericScatteringShader->setValue(9, outerRadius * outerRadius); // Outer radius^2.
+			_atmosphericScatteringShader->setValue(10, innerRadius); // inner radius (Planetary).
+			_atmosphericScatteringShader->setValue(11, innerRadius * innerRadius); // inner radius^2.
+			_atmosphericScatteringShader->setValue(12, rayleighConstant * sunIntensity); // kr * Esun
+			_atmosphericScatteringShader->setValue(13, mieConstant * sunIntensity); // Km * Esun
+			_atmosphericScatteringShader->setValue(14, (float)(rayleighConstant * 4.f * M_PI)); // kr * 4 * pi
+			_atmosphericScatteringShader->setValue(15, (float)(mieConstant * 4.f * M_PI)); // km * 4 * pi
+			_atmosphericScatteringShader->setValue(16, fScale); // 1 / (outerradius - innerradius)
+			_atmosphericScatteringShader->setValue(17, fScaleDepth); // 25% (0.25f)
+			_atmosphericScatteringShader->setValue(18, fScale / fScaleDepth); // Scale over scale depth.
+			_atmosphericScatteringShader->setValue(19, _skydome->getPosition());
+			_atmosphericScatteringShader->setValue(20, g); // Mie phase asymmetry factor
+			_atmosphericScatteringShader->setValue(21, g*g); // -||- ^2
 
-			_renderer->renderCubemap(_cubeMapModel);
+			_atmosphericScatteringShader->setValue(25, 0);
+			_atmosphericScatteringShader->setValue(26, 1);
+			_skydome->getMeshes()[0]->getTextures()[0]->bind(0);
+			//_lightingFramebuffer->getTexture(0)->bind(0);
+			_geometryFramebuffer->getTexture(Framebuffer::TextureAttachment::positions)->bind(1);
+			_renderer->renderSingle(_skydome);
 		}
+
+		//{	// 5.0 Cube map memes
+		//	_cubemapShader->useProgram();
+		//	_cubemapShader->setValue(0, glm::mat4(glm::mat3(_camera->getViewMatrix())));
+		//	_cubemapShader->setValue(1, _camera->getProjectionMatrix());
+		//	_cubemapShader->setValue(20, 0);
+		//	_cubeMapTexture->bindCubemap(0);
+
+		//	_renderer->renderCubemap(_cubeMapModel);
+		//}
 
 		{	// Render guizmo for camera's currently selected entity. (model for now)
 			_renderer->showGuizmo(_camera);
@@ -368,6 +416,11 @@ void Engine::_init() {
 	_fxaaShader->attachShader(ShaderProgram::ShaderType::VertexShader, "assets/shaders/fxaa.vert")
 		.attachShader(ShaderProgram::ShaderType::FragmentShader, "assets/shaders/fxaa.frag")
 		.finalize();
+
+	_atmosphericScatteringShader = std::make_shared<ShaderProgram>("FXAA Shader");
+	_atmosphericScatteringShader->attachShader(ShaderProgram::ShaderType::VertexShader, "assets/shaders/atmosphericscattering.vert")
+		.attachShader(ShaderProgram::ShaderType::FragmentShader, "assets/shaders/atmosphericscattering.frag")
+		.finalize();
 	
 	_geometryFramebuffer = std::make_shared<Framebuffer>();
 	_geometryFramebuffer->createTexture(0, _window->getSize(), Texture::TextureFormat::RGBA32f) // Pos 0
@@ -392,7 +445,7 @@ void Engine::_init() {
 	_cubeMapTexture = _textureLoader->loadCubeMapTexture("skybox");
 
 	_camera = std::make_shared<Camera>();
-	_camera->pos = glm::vec3(0,0,-10);
+	_camera->pos = glm::vec3(0,0,0);
 
 	_renderer->enableGaussianForVSM(_shadowCaster);
 	
@@ -410,7 +463,6 @@ void Engine::_initWorld() {
 	_modelHandler->createModel("plane.fbx")->setPosition(glm::vec3(0)).setScaling(glm::vec3(2000, 1, 2000));
 	_modelHandler->createModel("magicBox.obj")->setPosition(glm::vec3(0, 10, -5)).setScaling(glm::vec3(2));
 	_modelHandler->createModel("treeVersion4.fbx")->setPosition(glm::vec3(5, 0, 5)).setScaling(glm::vec3(2));
-	
 	auto fRand = [](float fMin, float fMax) {
 		float f = (float)rand() / RAND_MAX;
 		return fMin + f * (fMax - fMin);
@@ -437,7 +489,8 @@ void Engine::_initWorld() {
 
 	_quad = _meshLoader->getFullscreenQuad();
 	_cubeMapModel = _meshLoader->loadMesh("cubeMapBox.fbx");
-	_cubeMapModel->setScaling(glm::vec3(500.f));
-
+	_cubeMapModel->setScaling(glm::vec3(1.f));
+	_skydome = _meshLoader->loadMesh("skydomeModel.fbx");
+	_skydome->setScaling(glm::vec3(800.f));
 	_lights.push_back(std::make_shared<Pointlight>(glm::vec3(0, 10, -10), glm::vec3(1, 1, 1)));
 }
