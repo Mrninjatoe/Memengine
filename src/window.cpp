@@ -37,4 +37,5 @@ Window::Window(const std::string& caption) {
 Window::~Window() {
 	printf("~Window()\n");
 	SDL_DestroyWindow(_window);
+	SDL_Quit();
 }

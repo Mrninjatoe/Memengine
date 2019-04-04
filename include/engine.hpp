@@ -20,6 +20,11 @@ class Engine {
 			_camera.reset();
 			_textureLoader.reset();
 			_meshLoader.reset();
+			_shadowCaster.reset();
+			for (auto light : _lights) {
+				light.reset();
+			}
+			
 			_renderer.reset();
 			_window.reset();
 			_models.clear();

@@ -23,12 +23,13 @@ public:
 	
 	float fov = 70.f;
 	float zNear = 1.f;
-	float zFar = 1000.f;
+	float zFar = 350.f;
 	float pitch = 0.f;
 	float yaw = 0.f;
 	float speedMultipler = 1.0f;
 	float aspectRatio = 4 / 3.f;
 
+	// Temporary.
 	bool pressedShift = false;
 	bool moveUp = false;
 	bool moveDown = false;

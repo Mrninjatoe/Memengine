@@ -1,6 +1,7 @@
 #include "meshloader.hpp"
 #include "engine.hpp"
 #include <stdio.h>
+#include <assimp/Importer.hpp>
 
 // Fix deconstructor error for mesh...
 
@@ -21,7 +22,10 @@ std::shared_ptr<Model> MeshLoader::loadMesh(const std::string& fileName){
 		return std::make_shared<Model>(_models[fileName]);
 	}
 	
-	const aiScene* scene = aiImportFile(filePath.c_str(), aiProcess_Triangulate | 
+	Assimp::Importer importer;
+
+
+	const aiScene* scene = importer.ReadFile(filePath.c_str(), aiProcess_Triangulate | 
 		aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
@@ -30,6 +34,8 @@ std::shared_ptr<Model> MeshLoader::loadMesh(const std::string& fileName){
 	_models[fileName] = Model(fileName);
 	_processNode(scene->mRootNode, scene, fileName);
 
+	importer.FreeScene();
+	
 	return std::make_shared<Model>(_models[fileName]);
 } 
 

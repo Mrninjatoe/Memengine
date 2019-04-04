@@ -7,7 +7,7 @@
 
 class Mesh {
 public:
-	const enum BindingLocation : const int {
+	enum class BindingLocation : int {
 		position = 0,
 		normal = 1,
 		color = 2,
@@ -27,7 +27,7 @@ public:
 		glm::vec2 uv;
 	};
 
-	const enum TextureLocation : const int {
+	enum class TextureLocation : int {
 		diffuse = 0,
 		normalMap = 1,
 		heightMap = 2

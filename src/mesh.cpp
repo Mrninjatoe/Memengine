@@ -32,20 +32,20 @@ void Mesh::_setupBuffers() {
 void Mesh::_setupAttributes() {
 	glBindVertexArray(_vao);
 
-	glEnableVertexAttribArray(BindingLocation::position);
-	glVertexAttribPointer(BindingLocation::position, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)0);
+	glEnableVertexAttribArray((GLint)BindingLocation::position);
+	glVertexAttribPointer((GLint)BindingLocation::position, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)0);
 
-	glEnableVertexAttribArray(BindingLocation::normal);
-	glVertexAttribPointer(BindingLocation::normal, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, Vertex::normal));
+	glEnableVertexAttribArray((GLint)BindingLocation::normal);
+	glVertexAttribPointer((GLint)BindingLocation::normal, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, Vertex::normal));
 
-	glEnableVertexAttribArray(BindingLocation::color);
-	glVertexAttribPointer(BindingLocation::color, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, Vertex::color));
+	glEnableVertexAttribArray((GLint)BindingLocation::color);
+	glVertexAttribPointer((GLint)BindingLocation::color, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, Vertex::color));
 
-	glEnableVertexAttribArray(BindingLocation::tangent);
-	glVertexAttribPointer(BindingLocation::tangent, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, Vertex::tangent));
+	glEnableVertexAttribArray((GLint)BindingLocation::tangent);
+	glVertexAttribPointer((GLint)BindingLocation::tangent, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, Vertex::tangent));
 
-	glEnableVertexAttribArray(BindingLocation::uv);
-	glVertexAttribPointer(BindingLocation::uv, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, Vertex::uv));
+	glEnableVertexAttribArray((GLint)BindingLocation::uv);
+	glVertexAttribPointer((GLint)BindingLocation::uv, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)offsetof(Vertex, Vertex::uv));
 
 	glBindVertexArray(0);
 }
@@ -59,22 +59,22 @@ void Mesh::setupInstancedBuffer(const std::vector<glm::mat4>& matrices) {
 
 	auto vec4Size = sizeof(glm::vec4);
 
-	glEnableVertexAttribArray(BindingLocation::m);
-	glVertexAttribPointer(BindingLocation::m, 4, GL_FLOAT, GL_FALSE, (GLsizei)(4 * vec4Size), (GLvoid*)0);
+	glEnableVertexAttribArray((GLint)BindingLocation::m);
+	glVertexAttribPointer((GLint)BindingLocation::m, 4, GL_FLOAT, GL_FALSE, (GLsizei)(4 * vec4Size), (GLvoid*)0);
 
-	glEnableVertexAttribArray(BindingLocation::m_1);
-	glVertexAttribPointer(BindingLocation::m_1, 4, GL_FLOAT, GL_FALSE, (GLsizei)(4 * vec4Size), (GLvoid*)vec4Size);
+	glEnableVertexAttribArray((GLint)BindingLocation::m_1);
+	glVertexAttribPointer((GLint)BindingLocation::m_1, 4, GL_FLOAT, GL_FALSE, (GLsizei)(4 * vec4Size), (GLvoid*)vec4Size);
 
-	glEnableVertexAttribArray(BindingLocation::m_2);
-	glVertexAttribPointer(BindingLocation::m_2, 4, GL_FLOAT, GL_FALSE, (GLsizei)(4 * vec4Size), (GLvoid*)(vec4Size * 2));
+	glEnableVertexAttribArray((GLint)BindingLocation::m_2);
+	glVertexAttribPointer((GLint)BindingLocation::m_2, 4, GL_FLOAT, GL_FALSE, (GLsizei)(4 * vec4Size), (GLvoid*)(vec4Size * 2));
 
-	glEnableVertexAttribArray(BindingLocation::m_3);
-	glVertexAttribPointer(BindingLocation::m_3, 4, GL_FLOAT, GL_FALSE, (GLsizei)(4 * vec4Size), (GLvoid*)(vec4Size * 3));
+	glEnableVertexAttribArray((GLint)BindingLocation::m_3);
+	glVertexAttribPointer((GLint)BindingLocation::m_3, 4, GL_FLOAT, GL_FALSE, (GLsizei)(4 * vec4Size), (GLvoid*)(vec4Size * 3));
 	
-	glVertexAttribDivisor(BindingLocation::m, 1);
-	glVertexAttribDivisor(BindingLocation::m_1, 1);
-	glVertexAttribDivisor(BindingLocation::m_2, 1);
-	glVertexAttribDivisor(BindingLocation::m_3, 1);
+	glVertexAttribDivisor((GLint)BindingLocation::m, 1);
+	glVertexAttribDivisor((GLint)BindingLocation::m_1, 1);
+	glVertexAttribDivisor((GLint)BindingLocation::m_2, 1);
+	glVertexAttribDivisor((GLint)BindingLocation::m_3, 1);
 
 	glBindVertexArray(0);
 }

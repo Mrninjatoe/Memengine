@@ -11,7 +11,7 @@ Renderer::Renderer(SDL_Window* window){
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 4);
 	// Also request a depth buffer
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 32);
+	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SDL_GL_SetAttribute(
 		SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG
 	);
@@ -73,9 +73,9 @@ void Renderer::render(const std::vector<std::shared_ptr<Model>>& models, const s
 			shader->setValue(2, model->getModelMatrix());
 			shader->setValue(4, instanceCount);
 			for (auto mesh : model->getMeshes()) {
-				mesh->getTextures()[Mesh::TextureLocation::diffuse]->bind(0);
-				mesh->getTextures()[Mesh::TextureLocation::normalMap]->bind(1);
-				mesh->getTextures()[Mesh::TextureLocation::heightMap]->bind(2);
+				mesh->getTextures()[(int)Mesh::TextureLocation::diffuse]->bind(0);
+				mesh->getTextures()[(int)Mesh::TextureLocation::normalMap]->bind(1);
+				mesh->getTextures()[(int)Mesh::TextureLocation::heightMap]->bind(2);
 				shader->setValue(13, mesh->hasParallax());
 				glBindVertexArray(mesh->getVAO());
 				glDrawElementsInstanced(GL_TRIANGLES, (GLsizei)mesh->getIndices().size(), GL_UNSIGNED_INT, 0, (GLsizei)instanceCount);
@@ -110,7 +110,7 @@ void Renderer::renderShadows(const std::vector<std::shared_ptr<Model>>& models, 
 			shader->setValue(0, model->getModelMatrix());
 			shader->setValue(1, instanceCount);
 			for (auto mesh : model->getMeshes()) {
-				mesh->getTextures()[Mesh::TextureLocation::diffuse]->bind(0);
+				mesh->getTextures()[(int)Mesh::TextureLocation::diffuse]->bind(0);
 				glBindVertexArray(mesh->getVAO());
 				glDrawElementsInstanced(GL_TRIANGLES, (GLsizei)mesh->getIndices().size(), GL_UNSIGNED_INT, 0, (GLsizei)instanceCount);
 			}

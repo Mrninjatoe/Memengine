@@ -23,6 +23,8 @@ layout(location = 18) uniform float scaleOverScaleDepth; //fscale/scaledepth
 layout(location = 19) uniform vec3 atmospherePos;
 layout(location = 20) uniform float g;
 layout(location = 21) uniform float g2;
+layout(location = 22) uniform float hdrExposure;
+
 layout(location = 25) uniform sampler2D imageColors;
 layout(location = 26) uniform sampler2D imagePositions;
 
@@ -48,11 +50,11 @@ float getRayleighPhase(float cosAngle2){
 }
 
 void main(){
-	vec3 sceneColor = texture(imageColors, vUV).rgb;
+	vec3 aniki = texture(imageColors, vUV).rgb;
 	vec3 atmosphereOffset = vec3(0, innerRadius, 0);
 	
 	vec3 fragPos = vPos + atmosphereOffset;
-	vec3 offsetCameraPos = atmosphereOffset;
+	vec3 offsetCameraPos = cameraPos + atmosphereOffset;
 	vec3 vertToCameraRay = fragPos - offsetCameraPos;
 	float offsetCameraHeight = clamp(length(offsetCameraPos.y),0, outerRadius);
 	
@@ -65,7 +67,7 @@ void main(){
 	float startAngle = dot(vertToCameraRay, rayStart) / height;
 	float startOffset = depth * scale(startAngle);
 
-	const float numSamples = 100.f;
+	const float numSamples = 50.f;
 
 	float sampleLength = far / numSamples;
 	float scaledLength = sampleLength * fScale;
@@ -91,9 +93,9 @@ void main(){
 
 	float cosAngle = dot(-lightDir, t0) / length(t0);
 	float cosAngle2 = cosAngle * cosAngle;
-	vec3 col = (getRayleighPhase(cosAngle2) * c0) + getMiePhase(cosAngle, cosAngle2, g, g2) * c1;
+	vec3 col = (getRayleighPhase(cosAngle2) * c0) + getMiePhase(cosAngle, cosAngle2, g, g2) * (c1 + aniki);
 	//col *= vec3(0.29296875, 0, 0.5078125);
-	col = 1.0 - exp(col * -0.8f);
-
+	col = 1.0 - exp(col * hdrExposure);
+	//col *= sceneColor;
 	outColor = vec4(col, 1);
 }

@@ -73,6 +73,9 @@ int Engine::run() {
 	float sunIntensity = 30.f;
 	const float g = -0.990f; // Mie phas asymmetry factor. Between 0.999 to -0.999 if it is 1 or -1 it'll break.
 
+	// Global memes
+	float hdrExposure = -0.8f;
+
 	while (!quit) {
 		LAST = NOW;
 		NOW = SDL_GetPerformanceCounter();
@@ -202,6 +205,12 @@ int Engine::run() {
 				ImGui::SliderFloat("MaxLayers", &maxLayers, 1.f, 100.f);
 				ImGui::Checkbox("Stop Sun Rotation", &_shadowCaster->getRotation());
 			}
+			{ // HDR Exposure
+				ImGui::BeginChild("HDR Exposure");
+				ImGui::Text(":)");
+				ImGui::SliderFloat("hdrExposure", &hdrExposure, -1, 0);
+				ImGui::EndChild();
+			}
 			{ // FXAA
 				ImGui::BeginChild("FXAA Settings");
 				ImGui::Text("FXAA Attributes");
@@ -289,6 +298,8 @@ int Engine::run() {
 				_renderFBOShader->setValue(lightShaderPos++, light->color);
 			}
 
+			_renderFBOShader->setValue(400, hdrExposure);
+
 			_lightingFramebuffer->bind();
 			_renderer->renderFullScreenQuad(_quad);
 		}
@@ -308,6 +319,7 @@ int Engine::run() {
 			_renderer->postProcessFXAA(_quad);
 		}
 
+		printf("Camera Y pos: %f\n", _camera->pos.y);
 		{	// Temp memes
 			_atmosphericScatteringShader->useProgram();
 			_atmosphericScatteringShader->setValue(0, _camera->getViewMatrix());
@@ -332,6 +344,7 @@ int Engine::run() {
 			_atmosphericScatteringShader->setValue(19, _skydome->getPosition());
 			_atmosphericScatteringShader->setValue(20, g); // Mie phase asymmetry factor
 			_atmosphericScatteringShader->setValue(21, g*g); // -||- ^2
+			_atmosphericScatteringShader->setValue(22, hdrExposure);
 
 			_atmosphericScatteringShader->setValue(25, 0);
 			_atmosphericScatteringShader->setValue(26, 1);

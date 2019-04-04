@@ -36,6 +36,8 @@ layout(location = 37) uniform mat4 lightViewProjs[MAX_NUM_CASCADES];
 layout(location = 45) uniform int numberOfLights;
 layout(location = 46) uniform Pointlight pointLights[MAX_LIGHTS];
 
+layout(location = 400) uniform float hdrExposure;
+
 float linstep(float low, float high, float v){
 	return clamp((v-low)/(high-low), 0.0, 1.0);
 }
@@ -100,7 +102,7 @@ vec4 calculateDirLight(){
 	
 	vec4 shadow = readShadowMap(lightDir, fragNormal, fragPos.xyz);
 
-	return vec4(ambient + (shadow.xyz * (diffuse + specular) * fragColor.rgb), shadow.w);
+	return vec4(ambient + (shadow.xyz * (diffuse) * fragColor.rgb), shadow.w);
 }
 
 void main(){
@@ -123,5 +125,8 @@ void main(){
 
 	//outColor = vec4(cascadedSplits[0], cascadedSplits[1], cascadedSplits[2], 1);
 	//outColor = texture(normals, vUV);
+
+	result = 1.0 - exp(result * hdrExposure);
+
 	outColor = vec4(result.rgb + cascadeColor, 1);
 }
