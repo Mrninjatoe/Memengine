@@ -58,8 +58,8 @@ int Engine::run() {
 	float fxaaReduceMul = 1.f / 8.f;
 
 	// Scattering memes;
-	float innerRadius = 1000.f;
-	float outerRadius = innerRadius + ((innerRadius / 100) * 2.5f); // Outer radius.
+	float innerRadius = 10000.f;
+	float outerRadius = innerRadius * 1.025; // Outer radius.
 	const float waveLengthR = 1.f / pow(0.65f, 4);
 	const float waveLengthG = 1.f / pow(0.57f, 4);
 	const float waveLengthB = 1.f / pow(0.475f, 4); // :thinking:
@@ -69,9 +69,9 @@ int Engine::run() {
 	float fScale = 1 / (outerRadius - innerRadius);
 	float fScaleDepth = 0.25f; // The altitude which the average density is at.
 	const float rayleighConstant = 0.0025f; // 2.5%
-	const float mieConstant = 0.0010f;
+	float mieConstant = 0.0010f;
 	float sunIntensity = 30.f;
-	const float g = -0.990f; // Mie phas asymmetry factor. Between 0.999 to -0.999 if it is 1 or -1 it'll break.
+	float g = -0.990f; // Mie phas asymmetry factor. Between 0.999 to -0.999 if it is 1 or -1 it'll break.
 
 	// Global memes
 	float hdrExposure = -0.8f;
@@ -186,7 +186,6 @@ int Engine::run() {
 
 			bool cascadeIsStatic = _shadowCaster->isStatic();
 			ImGui::Begin("Graphic Settings");
-			ImGui::Text("Cascading shadow map attributes");
 			ImGui::Checkbox("Enable Cascade Debug", &debugCascades);
 			ImGui::Checkbox("Static Cascade Splits", &cascadeIsStatic);
 			if (cascadeIsStatic == false) {
@@ -199,31 +198,33 @@ int Engine::run() {
 				ImGui::SliderFloat("lowVSMValue", &lowVSMValue, 0.f, 1.0f);
 				ImGui::SliderFloat("highVSMValue", &highVSMValue, 0.f, 1.0f);
 				ImGui::SliderFloat("variancePower", &variancePower, 0.00001f, 0.0001f, "%.5f");
+				ImGui::Checkbox("Stop Sun Rotation", &_shadowCaster->getRotation());
+			}
+			{ // Parallax Mapping
 				ImGui::Text("Parallax Mapping Attributes");
 				ImGui::SliderFloat("HeightScale", &heightScale, 0.f, 1.f);
 				ImGui::SliderFloat("MinLayers", &minLayers, 1.f, 100.f);
 				ImGui::SliderFloat("MaxLayers", &maxLayers, 1.f, 100.f);
-				ImGui::Checkbox("Stop Sun Rotation", &_shadowCaster->getRotation());
-			}
-			{ // HDR Exposure
-				ImGui::BeginChild("HDR Exposure");
-				ImGui::Text(":)");
-				ImGui::SliderFloat("hdrExposure", &hdrExposure, -1, 0);
-				ImGui::EndChild();
 			}
 			{ // FXAA
-				ImGui::BeginChild("FXAA Settings");
 				ImGui::Text("FXAA Attributes");
 				ImGui::SliderFloat("fxaaSpanMax", &fxaaSpanMax, 1.f, 16.f);
 				ImGui::SliderFloat("fxaaReduceMin", &fxaaReduceMin, 1.f / 256.f, 1.f / 128.f);
 				ImGui::SliderFloat("fxaaReduceMul", &fxaaReduceMul, 1.f / 8.f, 1.f / 1.f);
-				ImGui::EndChild();
+			}
+			{ // HDR Exposure
+				ImGui::Text("HDR Exposure");
+				ImGui::SliderFloat("hdrExposure", &hdrExposure, -1, 0);
+			}
+			{ // Atmospheric Scattering
+				ImGui::Text("Atmospheric Scattering Attributes");
+				ImGui::SliderFloat("sunIntensity", &sunIntensity, 1.f, 100.f);
+				ImGui::SliderFloat("mieConstant", &mieConstant, 0.0010f, 0.1f);
+				ImGui::SliderFloat("g", &g, -0.999f, 0.999f);
 			}
 			{ // World picking stuff
-				ImGui::BeginChild("World Settings");
 				ImGui::Text("Generic Entity Control");
 				ImGui::Checkbox("Enable World Picking", &enablePicking);
-				ImGui::EndChild();
 			}
 			ImGui::End();
 			_camera->enablePicking = enablePicking;
@@ -264,7 +265,7 @@ int Engine::run() {
 			_renderFBOShader->setValue(15, variancePower);
 			_renderFBOShader->setValue(16, lowVSMValue);
 			_renderFBOShader->setValue(17, highVSMValue);
-			_renderFBOShader->setValue(18, _shadowCaster->getPos());
+			_renderFBOShader->setValue(18, glm::normalize(_shadowCaster->getPos()));
 			_renderFBOShader->setValue(19, _camera->pos);
 			_renderFBOShader->setValue(20, 0);
 			_renderFBOShader->setValue(21, 1);
@@ -290,13 +291,31 @@ int Engine::run() {
 			for (auto shadowViewProjMX : _shadowCaster->getViewProjMatrices())
 				_renderFBOShader->setValue(mxShaderPos++, shadowViewProjMX);
 
-			_renderFBOShader->setValue(45, (int)_lights.size());
+			_renderFBOShader->setValue(47, glm::vec3(waveLengthR, waveLengthG, waveLengthB));
+			_renderFBOShader->setValue(48, glm::length(_camera->pos.y));
+			_renderFBOShader->setValue(49, pow(glm::length(_camera->pos.y), 2));
+			_renderFBOShader->setValue(50, outerRadius); // Outer radius.
+			_renderFBOShader->setValue(51, outerRadius * outerRadius); // Outer radius^2.
+			_renderFBOShader->setValue(52, innerRadius); // inner radius (Planetary).
+			_renderFBOShader->setValue(53, innerRadius * innerRadius); // inner radius^2.
+			_renderFBOShader->setValue(54, rayleighConstant * sunIntensity); // kr * Esun
+			_renderFBOShader->setValue(55, mieConstant * sunIntensity); // Km * Esun
+			_renderFBOShader->setValue(56, (float)(rayleighConstant * 4.f * M_PI)); // kr * 4 * pi
+			_renderFBOShader->setValue(57, (float)(mieConstant * 4.f * M_PI)); // km * 4 * pi
+			_renderFBOShader->setValue(58, fScale); // 1 / (outerradius - innerradius)
+			_renderFBOShader->setValue(59, fScaleDepth); // 25% (0.25f)
+			_renderFBOShader->setValue(60, fScale / fScaleDepth); // Scale over scale depth.
+			_renderFBOShader->setValue(61, _skydome->getPosition());
+			_renderFBOShader->setValue(62, g); // Mie phase asymmetry factor
+			_renderFBOShader->setValue(63, g*g); // -||- ^2
+
+		/*	_renderFBOShader->setValue(45, (int)_lights.size());
 			int lightShaderPos = 46;
 			for (int i = 0; i < _lights.size(); i++) {
 				auto light = _lights[i];
 				_renderFBOShader->setValue(lightShaderPos++, light->pos);
 				_renderFBOShader->setValue(lightShaderPos++, light->color);
-			}
+			}*/
 
 			_renderFBOShader->setValue(400, hdrExposure);
 
@@ -319,14 +338,13 @@ int Engine::run() {
 			_renderer->postProcessFXAA(_quad);
 		}
 
-		printf("Camera Y pos: %f\n", _camera->pos.y);
 		{	// Temp memes
 			_atmosphericScatteringShader->useProgram();
 			_atmosphericScatteringShader->setValue(0, _camera->getViewMatrix());
 			_atmosphericScatteringShader->setValue(1, _camera->getProjectionMatrix());
 			_atmosphericScatteringShader->setValue(2, _skydome->getModelMatrix());
 			_atmosphericScatteringShader->setValue(3, _camera->pos);
-			_atmosphericScatteringShader->setValue(4, -glm::normalize(_shadowCaster->getPos())); // lightdir.
+			_atmosphericScatteringShader->setValue(4, glm::normalize(_shadowCaster->getPos())); // lightdir.
 			_atmosphericScatteringShader->setValue(5, glm::vec3(waveLengthR, waveLengthG, waveLengthB));
 			_atmosphericScatteringShader->setValue(6, glm::length(_camera->pos.y));
 			_atmosphericScatteringShader->setValue(7, pow(glm::length(_camera->pos.y), 2));
@@ -371,6 +389,7 @@ int Engine::run() {
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		SDL_GL_SwapWindow(_window->getWindow());
+		ImGui::EndFrame();
 	}
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplSDL2_Shutdown();
@@ -431,8 +450,13 @@ void Engine::_init() {
 		.finalize();
 
 	_atmosphericScatteringShader = std::make_shared<ShaderProgram>("FXAA Shader");
-	_atmosphericScatteringShader->attachShader(ShaderProgram::ShaderType::VertexShader, "assets/shaders/atmosphericscattering.vert")
-		.attachShader(ShaderProgram::ShaderType::FragmentShader, "assets/shaders/atmosphericscattering.frag")
+	_atmosphericScatteringShader->attachShader(ShaderProgram::ShaderType::VertexShader, "assets/shaders/AS-skyFromAtmosphere.vert")
+		.attachShader(ShaderProgram::ShaderType::FragmentShader, "assets/shaders/AS-skyFromAtmosphere.frag")
+		.finalize();
+
+	_asGroundFromAtmosphereShader = std::make_shared<ShaderProgram>("FXAA Shader");
+	_asGroundFromAtmosphereShader->attachShader(ShaderProgram::ShaderType::VertexShader, "assets/shaders/AS-groundFromAtmosphere.vert")
+		.attachShader(ShaderProgram::ShaderType::FragmentShader, "assets/shaders/AS-groundFromAtmosphere.frag")
 		.finalize();
 	
 	_geometryFramebuffer = std::make_shared<Framebuffer>();
@@ -481,21 +505,11 @@ void Engine::_initWorld() {
 		return fMin + f * (fMax - fMin);
 	};
 
-	const std::string treePaths[3] = { "lowPolyTree4.fbx", "lowPolyTree5.fbx", "lowPolyTree6.fbx"};
+	const std::string treePaths[4] = { "lowPolyTree5.fbx", "lowPolyTree6.fbx", "lowPolyTree7.fbx", "lowPolyTree8.fbx"};
 
 	for (int y = -10; y < 10; y++) {
 		for (int x = -10; x < 10; x++) {
-			//_modelHandler->createModel("lowPolyTree.fbx")
-			//	->setPosition(glm::vec3(x, 0, y) * fRand(-100, 100))
-			//	.setScaling(glm::vec3(1) * fRand(5, 10));
-
-			/*_modelHandler->createModel("lowPolyTree4.fbx")->setPosition(glm::vec3(x * fRand(-100, 100), 0, y * fRand(-100, 100)))
-				.setScaling(glm::vec3(1) * fRand(5, 10));*/
-
-			//_modelHandler->createModel("lowPolyTree6.fbx")->setPosition(glm::vec3(x * fRand(-100, 100), 0, y * fRand(-100, 100)))
-			//	.setScaling(glm::vec3(1) * fRand(5, 10));
-
-			_modelHandler->createModel(treePaths[int(fRand(0, 3))])->setPosition(glm::vec3(x * fRand(-100, 100), 0, y * fRand(-100, 100)))
+			_modelHandler->createModel(treePaths[int(fRand(0, 4))])->setPosition(glm::vec3(x * fRand(-100, 100), 0, y * fRand(-100, 100)))
 				.setScaling(glm::vec3(1) * fRand(5, 10));
 		}
 	}

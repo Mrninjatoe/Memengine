@@ -24,7 +24,6 @@ std::shared_ptr<Model> MeshLoader::loadMesh(const std::string& fileName){
 	
 	Assimp::Importer importer;
 
-
 	const aiScene* scene = importer.ReadFile(filePath.c_str(), aiProcess_Triangulate | 
 		aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 

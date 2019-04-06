@@ -18,6 +18,8 @@ layout(location = 3) uniform vec3 cameraPos;
 void main(){
 	vPos = vec3(m * vec4(pos, 1));
 	vUV = uv;
-	vec4 convertPos = p * v * vec4(pos + cameraPos, 1);
+	vec4 convertPos = p * v * vec4(pos + cameraPos + vec3(0, 0.1f, 0), 1);
+	// 0.1 is magic code, it just offets the skydome a bit up so one can see the
+	// Sunset better. 
 	gl_Position = convertPos.xyww;
 }

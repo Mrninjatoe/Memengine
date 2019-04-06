@@ -66,6 +66,7 @@ class Engine {
 		std::shared_ptr<ShaderProgram> _gaussianFilterShader;
 		std::shared_ptr<ShaderProgram> _fxaaShader;
 		std::shared_ptr<ShaderProgram> _atmosphericScatteringShader;
+		std::shared_ptr<ShaderProgram> _asGroundFromAtmosphereShader;
 		std::shared_ptr<Framebuffer> _shadowFramebuffer;
 		std::shared_ptr<Framebuffer> _geometryFramebuffer;
 		std::shared_ptr<Framebuffer> _lightingFramebuffer;
@@ -75,6 +76,7 @@ class Engine {
 		std::shared_ptr<Model> _cubeMapModel;
 		std::shared_ptr<Model> _skydome;
 		std::vector<std::shared_ptr<Model>> _models;
+		std::vector<std::shared_ptr<Model>> _trees;
 		std::vector<glm::mat4> _tempMatrices;
 
 		std::shared_ptr<Camera> _camera;

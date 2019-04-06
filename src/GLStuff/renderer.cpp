@@ -44,7 +44,7 @@ Renderer::Renderer(SDL_Window* window){
 	glEnable(GL_CULL_FACE); // Default
 	glCullFace(GL_BACK); // Default
 	glDepthMask(GL_TRUE);// Default
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // Default
+	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA); // Default
 }
 
 Renderer::~Renderer() {
@@ -60,7 +60,7 @@ void Renderer::render(const std::vector<std::shared_ptr<Model>>& models, const s
 	// Write to depth, do depth test, cull back.
 	const auto& sizes = Engine::getInstance()->getWindow()->getSize();
 	glViewport(0, 0, sizes.x, sizes.y);
-	glClearColor(0,0,0,0);
+	glClearColor(1,0,0,0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	//glDisable(GL_CULL_FACE);
 	shader->setValue(20, 0); // diff
@@ -151,7 +151,7 @@ void Renderer::renderFullScreenQuad(const std::shared_ptr<Model>& quad) {
 	// Write to depth, depth test, cull nothing.
 	const auto& sizes = Engine::getInstance()->getWindow()->getSize();
 	glViewport(0, 0, sizes.x, sizes.y); // change viewport back to screen size.
-	glClearColor(0,0,0,1);
+	glClearColor(1,0,0,1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
 	//glDisable(GL_CULL_FACE); //Needs to add this if gaussian pass is off.

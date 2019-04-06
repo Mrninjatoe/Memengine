@@ -52,7 +52,7 @@ void main(){
 		texCoords = parallaxMapping(vec2(fs_in.uv.x, 1.f - fs_in.uv.y), normalize(fs_in.tanViewPos - fs_in.tanFragPos));
 	vec4 objectColor = texture(diffuseTexture, texCoords);
 
-	if(objectColor.a < 0.1f)
+	if(objectColor.a < 0.5f)
 		discard;
 
 	vec3 normal = normalize(texture(normalTexture, texCoords).xyz * 2.0 - 1.0);

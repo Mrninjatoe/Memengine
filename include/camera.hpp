@@ -23,7 +23,7 @@ public:
 	
 	float fov = 70.f;
 	float zNear = 1.f;
-	float zFar = 350.f;
+	float zFar = 1000.f;
 	float pitch = 0.f;
 	float yaw = 0.f;
 	float speedMultipler = 1.0f;

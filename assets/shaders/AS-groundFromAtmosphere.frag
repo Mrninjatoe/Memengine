@@ -54,7 +54,10 @@ void main(){
 	vec3 atmosphereOffset = vec3(0, innerRadius, 0);
 	
 	vec3 fragPos = vPos + atmosphereOffset;
-	vec3 offsetCameraPos = cameraPos + atmosphereOffset;
+	// toOffset displaces the cameraPosition lower/higher depending on the cos angle
+	// between the "sun position"  and a global up vector.
+	float toOffset = clamp(dot(lightDir, vec3(0, 1, 0)) * 25.f, -25.f, -5.2f);
+	vec3 offsetCameraPos = vec3(0, toOffset + atmosphereOffset.y, 0);
 	vec3 vertToCameraRay = fragPos - offsetCameraPos;
 	float offsetCameraHeight = clamp(length(offsetCameraPos.y),0, outerRadius);
 	
@@ -78,7 +81,7 @@ void main(){
 	for(int i = 0; i < int(numSamples); i++){
 		float cSampleHeight = length(samplePoint);
 		float cSampleDepth = exp(scaleOverScaleDepth * (innerRadius - cSampleHeight));
-		float cLightAngle = dot(-lightDir, samplePoint) / cSampleHeight;
+		float cLightAngle = dot(lightDir, samplePoint) / cSampleHeight;
 		float cCameraAngle = dot(vertToCameraRay, samplePoint) / cSampleHeight;
 		float cScatter = startOffset + cSampleDepth * (scale(cLightAngle) - scale(cCameraAngle));
 		vec3 cAttenuation = exp(-cScatter * (wlRGB * fKr4PI + fKm4PI));
@@ -91,7 +94,7 @@ void main(){
 
 	vec3 t0 = offsetCameraPos - fragPos;
 
-	float cosAngle = dot(-lightDir, t0) / length(t0);
+	float cosAngle = dot(lightDir, t0) / length(t0);
 	float cosAngle2 = cosAngle * cosAngle;
 	vec3 col = (getRayleighPhase(cosAngle2) * c0) + getMiePhase(cosAngle, cosAngle2, g, g2) * (c1 + aniki);
 	//col *= vec3(0.29296875, 0, 0.5078125);
