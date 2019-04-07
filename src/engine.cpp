@@ -59,7 +59,7 @@ int Engine::run() {
 
 	// Scattering memes;
 	float innerRadius = 10000.f;
-	float outerRadius = innerRadius * 1.025; // Outer radius.
+	float outerRadius = innerRadius * 1.025f; // Outer radius.
 	const float waveLengthR = 1.f / pow(0.65f, 4);
 	const float waveLengthG = 1.f / pow(0.57f, 4);
 	const float waveLengthB = 1.f / pow(0.475f, 4); // :thinking:
@@ -72,7 +72,7 @@ int Engine::run() {
 	float mieConstant = 0.0010f;
 	float sunIntensity = 30.f;
 	float g = -0.990f; // Mie phas asymmetry factor. Between 0.999 to -0.999 if it is 1 or -1 it'll break.
-
+	float scatteringNumSamples = 5.f;
 	// Global memes
 	float hdrExposure = -0.8f;
 
@@ -221,6 +221,8 @@ int Engine::run() {
 				ImGui::SliderFloat("sunIntensity", &sunIntensity, 1.f, 100.f);
 				ImGui::SliderFloat("mieConstant", &mieConstant, 0.0010f, 0.1f);
 				ImGui::SliderFloat("g", &g, -0.999f, 0.999f);
+				ImGui::SliderFloat("scaleDepth", &fScaleDepth, 0.01f, 1.0f);
+				ImGui::SliderFloat("numSamples", &scatteringNumSamples, 1.f, 1000.f);
 			}
 			{ // World picking stuff
 				ImGui::Text("Generic Entity Control");
@@ -235,6 +237,10 @@ int Engine::run() {
 		_shadowCaster->update(deltaTime);
 		_shadowCaster->createCascadeSplits(_camera); // Cascading shadow maps split per frame...
 		_modelHandler->updateInstancedModels();
+
+		// Temporary pointlight movement
+		_updatePointLights(deltaTime);
+
 
 		{	// 1.0 Geometry pass
 			_normalShader->useProgram();
@@ -308,14 +314,15 @@ int Engine::run() {
 			_renderFBOShader->setValue(61, _skydome->getPosition());
 			_renderFBOShader->setValue(62, g); // Mie phase asymmetry factor
 			_renderFBOShader->setValue(63, g*g); // -||- ^2
+			_renderFBOShader->setValue(64, scatteringNumSamples);
 
-		/*	_renderFBOShader->setValue(45, (int)_lights.size());
-			int lightShaderPos = 46;
+			_renderFBOShader->setValue(80, (int)_lights.size());
+			int lightShaderPos = 81;
 			for (int i = 0; i < _lights.size(); i++) {
 				auto light = _lights[i];
 				_renderFBOShader->setValue(lightShaderPos++, light->pos);
 				_renderFBOShader->setValue(lightShaderPos++, light->color);
-			}*/
+			}
 
 			_renderFBOShader->setValue(400, hdrExposure);
 
@@ -338,7 +345,7 @@ int Engine::run() {
 			_renderer->postProcessFXAA(_quad);
 		}
 
-		{	// Temp memes
+		{	// 5.0 Skydome.
 			_atmosphericScatteringShader->useProgram();
 			_atmosphericScatteringShader->setValue(0, _camera->getViewMatrix());
 			_atmosphericScatteringShader->setValue(1, _camera->getProjectionMatrix());
@@ -363,24 +370,14 @@ int Engine::run() {
 			_atmosphericScatteringShader->setValue(20, g); // Mie phase asymmetry factor
 			_atmosphericScatteringShader->setValue(21, g*g); // -||- ^2
 			_atmosphericScatteringShader->setValue(22, hdrExposure);
+			_atmosphericScatteringShader->setValue(23, scatteringNumSamples);
 
 			_atmosphericScatteringShader->setValue(25, 0);
 			_atmosphericScatteringShader->setValue(26, 1);
 			_skydome->getMeshes()[0]->getTextures()[0]->bind(0);
-			//_lightingFramebuffer->getTexture(0)->bind(0);
 			_geometryFramebuffer->getTexture(Framebuffer::TextureAttachment::positions)->bind(1);
 			_renderer->renderSingle(_skydome);
 		}
-
-		//{	// 5.0 Cube map memes
-		//	_cubemapShader->useProgram();
-		//	_cubemapShader->setValue(0, glm::mat4(glm::mat3(_camera->getViewMatrix())));
-		//	_cubemapShader->setValue(1, _camera->getProjectionMatrix());
-		//	_cubemapShader->setValue(20, 0);
-		//	_cubeMapTexture->bindCubemap(0);
-
-		//	_renderer->renderCubemap(_cubeMapModel);
-		//}
 
 		{	// Render guizmo for camera's currently selected entity. (model for now)
 			_renderer->showGuizmo(_camera);
@@ -454,11 +451,6 @@ void Engine::_init() {
 		.attachShader(ShaderProgram::ShaderType::FragmentShader, "assets/shaders/AS-skyFromAtmosphere.frag")
 		.finalize();
 
-	_asGroundFromAtmosphereShader = std::make_shared<ShaderProgram>("FXAA Shader");
-	_asGroundFromAtmosphereShader->attachShader(ShaderProgram::ShaderType::VertexShader, "assets/shaders/AS-groundFromAtmosphere.vert")
-		.attachShader(ShaderProgram::ShaderType::FragmentShader, "assets/shaders/AS-groundFromAtmosphere.frag")
-		.finalize();
-	
 	_geometryFramebuffer = std::make_shared<Framebuffer>();
 	_geometryFramebuffer->createTexture(0, _window->getSize(), Texture::TextureFormat::RGBA32f) // Pos 0
 		.createTexture(1, _window->getSize(), Texture::TextureFormat::RGBA32f) // Normal 1
@@ -498,26 +490,58 @@ void Engine::_initGL() {
 }
 void Engine::_initWorld() {
 	_modelHandler->createModel("plane.fbx")->setPosition(glm::vec3(0)).setScaling(glm::vec3(2000, 1, 2000));
-	_modelHandler->createModel("magicBox.obj")->setPosition(glm::vec3(0, 10, -5)).setScaling(glm::vec3(2));
-	_modelHandler->createModel("treeVersion4.fbx")->setPosition(glm::vec3(5, 0, 5)).setScaling(glm::vec3(2));
+	//_modelHandler->createModel("magicBox.obj")->setPosition(glm::vec3(0, 10, -5)).setScaling(glm::vec3(2));
+	//_modelHandler->createModel("treeVersion4.fbx")->setPosition(glm::vec3(5, 0, 5)).setScaling(glm::vec3(2));
+	_modelHandler->createModel("isak_tecken.fbx")->setPosition(glm::vec3(0, 1, 0)).setScaling(glm::vec3(5));
 	auto fRand = [](float fMin, float fMax) {
 		float f = (float)rand() / RAND_MAX;
 		return fMin + f * (fMax - fMin);
 	};
 
-	const std::string treePaths[4] = { "lowPolyTree5.fbx", "lowPolyTree6.fbx", "lowPolyTree7.fbx", "lowPolyTree8.fbx"};
+	const std::string treePaths[3] = {"lowPolyTree7.fbx", "lowPolyTree8.fbx", "lowPolyTree9.fbx"};
 
 	for (int y = -10; y < 10; y++) {
 		for (int x = -10; x < 10; x++) {
-			_modelHandler->createModel(treePaths[int(fRand(0, 4))])->setPosition(glm::vec3(x * fRand(-100, 100), 0, y * fRand(-100, 100)))
-				.setScaling(glm::vec3(1) * fRand(5, 10));
+			if ((y >= -2 && y < 2) || (x >= -2 && x < 2))
+				continue;
+			_modelHandler->createModel(treePaths[int(fRand(0, 3))])
+				->setPosition(glm::vec3(x * 30, 0, y * 30))
+				.setScaling(glm::vec3(1) * fRand(10, 15));
 		}
 	}
+
+	//for (int y = -2; y < 2; y++) {
+	//	for (int x = -2; x < 2; x++) {
+	//		_lights.push_back(std::make_shared<Pointlight>(glm::vec3(x * 150, 1, y * 150), 
+	//			glm::vec3(1, 0, 0)));
+	//	}
+	//}
+
+	_lights.push_back(std::make_shared<Pointlight>(glm::vec3(150, 50, 150),
+		glm::vec3(1,0,0)));
 
 	_quad = _meshLoader->getFullscreenQuad();
 	_cubeMapModel = _meshLoader->loadMesh("cubeMapBox.fbx");
 	_cubeMapModel->setScaling(glm::vec3(1.f));
 	_skydome = _meshLoader->loadMesh("skydomeModel.fbx");
 	_skydome->setScaling(glm::vec3(800.f));
-	_lights.push_back(std::make_shared<Pointlight>(glm::vec3(0, 10, -10), glm::vec3(1, 1, 1)));
+}
+
+void Engine::_updatePointLights(float delta) {
+	static float angle = 0.f;
+	float angleOffset = (2.f * M_PI) / (float)_lights.size();
+	float radius = 250.f;
+	float index = 0.f;
+	for (auto light : _lights) {
+		float offset = angle + angleOffset * index;
+		float camX = sin(offset) * radius;
+		float camZ = cos(offset) * radius;
+
+		light->pos.x = camX;
+		light->pos.z = camZ;
+		index++;
+	}
+	
+	angle += 0.1f * delta;
+	_pointLightTimeCounter += 1 * delta;
 }

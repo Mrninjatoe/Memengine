@@ -24,6 +24,7 @@ layout(location = 19) uniform vec3 atmospherePos;
 layout(location = 20) uniform float g;
 layout(location = 21) uniform float g2;
 layout(location = 22) uniform float hdrExposure;
+layout(location = 23) uniform float scatteringNumSamples;
 
 layout(location = 25) uniform sampler2D imageColors;
 layout(location = 26) uniform sampler2D imagePositions;
@@ -70,15 +71,13 @@ void main(){
 	float startAngle = dot(vertToCameraRay, rayStart) / height;
 	float startOffset = depth * scale(startAngle);
 
-	const float numSamples = 50.f;
-
-	float sampleLength = far / numSamples;
+	float sampleLength = far / scatteringNumSamples;
 	float scaledLength = sampleLength * fScale;
 	vec3 sampleRay = vertToCameraRay * sampleLength;
 	vec3 samplePoint = rayStart + sampleRay * 0.5;
 
 	vec3 frontColor = vec3(0.f);
-	for(int i = 0; i < int(numSamples); i++){
+	for(int i = 0; i < int(scatteringNumSamples); i++){
 		float cSampleHeight = length(samplePoint);
 		float cSampleDepth = exp(scaleOverScaleDepth * (innerRadius - cSampleHeight));
 		float cLightAngle = dot(lightDir, samplePoint) / cSampleHeight;

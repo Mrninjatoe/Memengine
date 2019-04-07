@@ -49,6 +49,7 @@ class Engine {
 		void _initSDL();
 		void _initGL();
 		void _initWorld();
+		void _updatePointLights(float delta);
 		static Engine* _instance;
 		
 		std::unique_ptr<Window> _window;
@@ -66,7 +67,6 @@ class Engine {
 		std::shared_ptr<ShaderProgram> _gaussianFilterShader;
 		std::shared_ptr<ShaderProgram> _fxaaShader;
 		std::shared_ptr<ShaderProgram> _atmosphericScatteringShader;
-		std::shared_ptr<ShaderProgram> _asGroundFromAtmosphereShader;
 		std::shared_ptr<Framebuffer> _shadowFramebuffer;
 		std::shared_ptr<Framebuffer> _geometryFramebuffer;
 		std::shared_ptr<Framebuffer> _lightingFramebuffer;
@@ -82,4 +82,7 @@ class Engine {
 		std::shared_ptr<Camera> _camera;
 		std::shared_ptr<Shadowcaster> _shadowCaster;
 		std::vector<std::shared_ptr<Pointlight>> _lights;
+
+		// This shall be removed.
+		float _pointLightTimeCounter = 0.f;
 };

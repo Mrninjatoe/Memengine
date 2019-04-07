@@ -6,12 +6,12 @@ in vec2 vUV;
 
 layout(location = 0) out vec4 outColor;
 
-//struct Pointlight{
-//	vec3 pos;
-//	vec3 color;
-//};
+struct Pointlight{
+	vec3 pos;
+	vec3 color;
+};
 
-//const int MAX_LIGHTS = 128;
+const int MAX_LIGHTS = 16;
 const int MAX_NUM_CASCADES = 8;
 
 layout(location = 15) uniform float variancePower;
@@ -50,9 +50,10 @@ layout(location = 60) uniform float scaleOverScaleDepth; //fscale/scaledepth
 layout(location = 61) uniform vec3 atmospherePos;
 layout(location = 62) uniform float g;
 layout(location = 63) uniform float g2;
+layout(location = 64) uniform float scatteringNumSamples;
 
-//layout(location 65= 45) uniform int numberOfLights;
-//layout(location 66= 46) uniform Pointlight pointLights[MAX_LIGHTS];
+layout(location = 80) uniform int numberOfLights;
+layout(location = 81) uniform Pointlight pointLights[MAX_LIGHTS];
 
 layout(location = 400) uniform float hdrExposure;
 
@@ -74,7 +75,7 @@ float sampleVarianceShadowMap(vec3 projCoords, float compare){
 	return min(max(p, pMax), 1.0f);
 }
 
-vec4 readShadowMap(vec3 lightDir, vec3 fragNormal, vec3 fragPos){
+vec4 readShadowMap(vec3 fragNormal, vec3 fragPos){
 	vec3 fragVPos = vec3(v * vec4(fragPos, 1.0f));
 	float posViewSpaceZ = fragVPos.z;
 
@@ -95,20 +96,14 @@ vec4 readShadowMap(vec3 lightDir, vec3 fragNormal, vec3 fragPos){
 	// PCF
 	float shadow = 0.f;
 	shadow = sampleVarianceShadowMap(projCoords, currentDepth);
-
 	if(currentDepth > 1.0f)
 		shadow = 1.f;
 
 	return vec4(vec3(shadow), projCoords.z);	
 }
 
-vec4 calculateDirLight(vec4 fragColor){
+vec4 calculateDirLight(vec4 fragColor, vec4 fragPos, vec3 fragNormal){
 	vec3 sunColor = vec3(1);
-	vec4 fragPos = texture(positions, vUV);
-	vec3 fragNormal = texture(normals, vUV).xyz;
-	vec4 fragDepth = texture(depths, vUV);
-
-	fragNormal = normalize(fragNormal);
 
 	// Specular
 	vec3 viewDir = normalize(cameraPos - fragPos.xyz);
@@ -120,12 +115,12 @@ vec4 calculateDirLight(vec4 fragColor){
 	float diff = max(0.f, dot(fragNormal, lightDir));
 	vec3 diffuse = diff * sunColor;
 	
-	vec4 shadow = readShadowMap(lightDir, fragNormal, fragPos.xyz);
+	vec4 shadow = readShadowMap(fragNormal, fragPos.xyz);
 
 	return vec4((shadow.xyz * (diffuse) * fragColor.rgb), shadow.w);
 }
 
-vec4 calculateScattering(vec3 currentColor){
+vec4 calculateScattering(vec3 currentColor, vec3 pos){
 	vec3 col;
 	vec3 atmosphereOffset = vec3(0, innerRadius, 0);
 	
@@ -135,7 +130,7 @@ vec4 calculateScattering(vec3 currentColor){
 	vec3 offsetCameraPos = cameraPos + atmosphereOffset;
 	float offsetCameraHeight = clamp(length(offsetCameraPos.y), innerRadius + 25, outerRadius);
 	
-	vec3 fragPos = texture(positions, vUV).xyz + atmosphereOffset;
+	vec3 fragPos = pos + atmosphereOffset;
 	vec3 vertToCameraRay = fragPos - offsetCameraPos;
 	fragPos = normalize(fragPos);
 	float far = length(vertToCameraRay);
@@ -150,16 +145,14 @@ vec4 calculateScattering(vec3 currentColor){
 	float cameraOffset = depth * cameraScale;
 	float temp = (lightScale + cameraScale);
 
-	const float numSamples = 50.f;
-
-	float sampleLength = far / numSamples;
+	float sampleLength = far / scatteringNumSamples;
 	float scaledLength = sampleLength * fScale;
 	vec3 sampleRay = vertToCameraRay * sampleLength;
 	vec3 samplePoint = rayStart + sampleRay * 0.5f;
 
 	vec3 frontColor = vec3(0.f);
 	vec3 attenuation;
-	for(int i = 0; i < int(numSamples); i++){
+	for(int i = 0; i < int(scatteringNumSamples); i++){
 		float cHeight = length(samplePoint);
 		float cDepth = exp(scaleOverScaleDepth * (innerRadius - cHeight));
 		float cScatter = cDepth * temp - cameraOffset;
@@ -176,26 +169,55 @@ vec4 calculateScattering(vec3 currentColor){
 	return vec4(col, 1);
 }
 
+vec3 calculatePointLight(vec3 fragColor, vec3 fragPos, vec3 fragNormal, Pointlight pointLight){
+	vec3 col = vec3(0);
+
+	vec3 pLightDir = normalize(pointLight.pos - fragPos);
+
+	// Specular
+	vec3 viewDir = normalize(cameraPos - fragPos);
+	vec3 halfWayDir = normalize(pLightDir + viewDir);
+	float spec = pow(max(dot(fragNormal, halfWayDir), 0.0), 128);
+	vec3 specular = spec * pointLight.color * 0.2f;
+
+	// Diffuse
+	float diff = max(dot(fragNormal, pLightDir), 0.0);
+	vec3 diffuse = diff * pointLight.color;
+
+	col = (specular + diffuse) * fragColor;
+
+	return col;
+}
+
 void main(){
 	vec4 result = vec4(0);
 	vec4 fragColor = texture(colors, vUV);
+	vec4 fragPos = texture(positions, vUV);
+	vec3 fragNormal = normalize(texture(normals, vUV).xyz);
 
-	result = calculateDirLight(fragColor);
-	result = calculateScattering(result.rgb);
+	result = calculateDirLight(fragColor, fragPos, fragNormal);
+	int cascadeDebug = int(result.w);
+	result = calculateScattering(result.rgb, fragPos.xyz);
+
+	float lightFallOff = 1.f / numberOfLights;
+	for(int i = 0; i < numberOfLights; i++){
+		result.rgb += lightFallOff * calculatePointLight(fragColor.rgb, fragPos.xyz, fragNormal, pointLights[i]);
+	}
+
 	vec3 ambient = (fragColor.rgb * 0.1f);
 	result.rgb += ambient;
 
 	vec3 cascadeColor = vec3(0);
 	if(debugCascade){
-		if(result.w == 0)
+		if(cascadeDebug == 0)
 			cascadeColor = vec3(0.2,0,0);
-		else if(result.w == 1)
+		else if(cascadeDebug == 1)
 			cascadeColor = vec3(0,0.2,0);
-		else if(result.w == 2)
+		else if(cascadeDebug == 2)
 			cascadeColor = vec3(0,0,0.2);
-		else if(result.w == 3)
+		else if(cascadeDebug == 3)
 			cascadeColor = vec3(0.2, 0, 0.2);
-		else if(result.w == 4)
+		else if(cascadeDebug == 4)
 			cascadeColor = vec3(0.2, 0.2, 0);
 	}
 

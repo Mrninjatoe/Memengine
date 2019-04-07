@@ -12,7 +12,7 @@
 // Still a bit broken, too big difference between orthographic boxes.
 // Will probably fix it by making it static whenever I am done with my scenes.
 
-Shadowcaster::Shadowcaster() : _pos(0, 0, -1.f), _timeCounter(0), 
+Shadowcaster::Shadowcaster() : _pos(0, 1.0f, -1.f), _timeCounter(0), 
 numCascadeSplits(4), _resolution(1024){
 	_initialize();
 }

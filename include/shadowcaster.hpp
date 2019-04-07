@@ -31,7 +31,7 @@ private:
 	std::vector<float> _cascadedSplits;
 	std::vector<glm::mat4> _cascadedViewProjs;
 	float _timeCounter;
-	bool  _stopRotation = false;
+	bool  _stopRotation = true;
 	int _resolution; // Always *2 for width/height.
 
 	void _initialize();
