@@ -79,6 +79,20 @@ void Mesh::setupInstancedBuffer(const std::vector<glm::mat4>& matrices) {
 	glBindVertexArray(0);
 }
 
+void Mesh::setupInstancedBuffer(const std::vector<glm::vec3>& offsets) {
+	glBindVertexArray(_vao);
+
+	glGenBuffers(1, &_extraBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, _extraBuffer);
+	glBufferData(GL_ARRAY_BUFFER, offsets.size() * sizeof(glm::vec3), &offsets[0], GL_DYNAMIC_DRAW); // Might change to stream_draw later. :)
+
+	glEnableVertexAttribArray((GLint)BindingLocation::terrainOffset);
+	glVertexAttribPointer((GLint)BindingLocation::terrainOffset, 3, GL_FLOAT, GL_FALSE, (GLsizei)sizeof(glm::vec3), (GLvoid*)0);
+	glVertexAttribDivisor((GLint)BindingLocation::terrainOffset, 1);
+
+	glBindVertexArray(0);
+}
+
 void Mesh::updateInstancedBufferFull(const std::vector<glm::mat4>& matrices) {
 	glBindBuffer(GL_ARRAY_BUFFER, _extraBuffer);
 	glBufferData(GL_ARRAY_BUFFER, matrices.size() * sizeof(glm::mat4), &matrices[0], GL_DYNAMIC_DRAW);

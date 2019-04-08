@@ -11,6 +11,7 @@
 #include "GLStuff/uniformbuffer.hpp"
 #include "shadowcaster.hpp"
 #include "modelhandler.hpp"
+#include "terraingenerator.hpp"
 
 class Engine {
 	public:
@@ -21,6 +22,7 @@ class Engine {
 			_textureLoader.reset();
 			_meshLoader.reset();
 			_shadowCaster.reset();
+			_terrainGenerator.reset();
 			for (auto light : _lights) {
 				light.reset();
 			}
@@ -48,6 +50,9 @@ class Engine {
 		void _init();
 		void _initSDL();
 		void _initGL();
+		void _initGraphicalDependencies();
+		void _initShaders();
+		void _initFramebuffers();
 		void _initWorld();
 		void _updatePointLights(float delta);
 		static Engine* _instance;
@@ -57,6 +62,7 @@ class Engine {
 		std::unique_ptr<TextureLoader> _textureLoader;
 		std::unique_ptr<MeshLoader> _meshLoader;
 		std::unique_ptr<ModelHandler> _modelHandler;
+		std::unique_ptr<TerrainGenerator> _terrainGenerator;
 
 		std::shared_ptr<ShaderProgram> _shadowShader;
 		std::shared_ptr<ShaderProgram> _cShadowDebugShader;
@@ -67,6 +73,7 @@ class Engine {
 		std::shared_ptr<ShaderProgram> _gaussianFilterShader;
 		std::shared_ptr<ShaderProgram> _fxaaShader;
 		std::shared_ptr<ShaderProgram> _atmosphericScatteringShader;
+		std::shared_ptr<ShaderProgram> _terrainShader;
 		std::shared_ptr<Framebuffer> _shadowFramebuffer;
 		std::shared_ptr<Framebuffer> _geometryFramebuffer;
 		std::shared_ptr<Framebuffer> _lightingFramebuffer;
@@ -82,6 +89,7 @@ class Engine {
 		std::shared_ptr<Camera> _camera;
 		std::shared_ptr<Shadowcaster> _shadowCaster;
 		std::vector<std::shared_ptr<Pointlight>> _lights;
+
 
 		// This shall be removed.
 		float _pointLightTimeCounter = 0.f;

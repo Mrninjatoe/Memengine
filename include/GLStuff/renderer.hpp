@@ -12,16 +12,16 @@ class Renderer {
 public:
 	Renderer(SDL_Window* window);
 	virtual ~Renderer();
-	void render(const std::vector<std::shared_ptr<Model>>& models, const std::shared_ptr<ShaderProgram>& shader);
-	void renderShadows(const std::vector<std::shared_ptr<Model>>& models, const std::shared_ptr<ShaderProgram>& shader,
-		const std::shared_ptr<Framebuffer>& fbo, const std::shared_ptr<Shadowcaster>& caster);
-	void gaussianFilter(const std::shared_ptr<Texture>& toBlur, const std::shared_ptr<Model>& quad, const std::shared_ptr<ShaderProgram>& gaussianShader);
-	void renderFullScreenQuad(const std::shared_ptr<Model>& quad);
-	void postProcessFXAA(const std::shared_ptr<Model>& quad);
-	void renderCubemap(const std::shared_ptr<Model>& cubemapModel);
-	void renderSingle(const std::shared_ptr<Model>& model); // super hacky for now I really need to clean up my code...
-	void showGuizmo(const std::shared_ptr<Camera>& camera);
-	void enableGaussianForVSM(const std::shared_ptr<Shadowcaster>& caster);
+	void render(const std::shared_ptr<ShaderProgram> shader);
+	void renderShadows(const std::shared_ptr<ShaderProgram> shader,
+		const std::shared_ptr<Framebuffer> fbo, const std::shared_ptr<Shadowcaster> caster);
+	void gaussianFilter(const std::shared_ptr<Texture> toBlur, const std::shared_ptr<Model> quad, const std::shared_ptr<ShaderProgram> gaussianShader);
+	void renderFullScreenQuad(const std::shared_ptr<Model> quad);
+	void postProcessFXAA(const std::shared_ptr<Model> quad);
+	void renderTerrain(const std::shared_ptr<Mesh> terrain, const int& instanceCount);
+	void renderSkydome(const std::shared_ptr<Model> model);
+	void showGuizmo(const std::shared_ptr<Camera> camera);
+	void enableGaussianForVSM(const std::shared_ptr<Shadowcaster> caster);
 	SDL_GLContext& getContext() { return _context; }
 	std::shared_ptr<Texture> getPingPongTexture() { return _pingPongBuffers[0]->getTexture(0); }
 private:

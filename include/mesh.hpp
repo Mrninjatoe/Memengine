@@ -16,7 +16,8 @@ public:
 		m = 5,
 		m_1 = 6,
 		m_2 = 7,
-		m_3 = 8
+		m_3 = 8,
+		terrainOffset = 9
 	};
 
 	struct Vertex {
@@ -43,6 +44,7 @@ public:
 
 	void addTexture(const std::shared_ptr<Texture>& tex);
 	void setupInstancedBuffer(const std::vector<glm::mat4>& matrices);
+	void setupInstancedBuffer(const std::vector<glm::vec3>& offsets);
 	void updateInstancedBufferFull(const std::vector<glm::mat4>& matrices);
 	void updateInstancedBufferOffset(const glm::ivec2& offset, const glm::mat4& newMatrix);
 	GLuint& getVAO() { return _vao; }
@@ -57,6 +59,7 @@ public:
 private:
 	GLuint _vao, _vbo, _ebo;
 	GLuint _extraBuffer;
+	std::vector<GLuint> _extrabuffers;
 	std::vector<Vertex> _vertices;
 	std::vector<unsigned int> _indices;
 	bool _hasTangents;

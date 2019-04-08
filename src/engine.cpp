@@ -252,14 +252,22 @@ int Engine::run() {
 			_normalShader->setValue(12, maxLayers);
 			
 			_geometryFramebuffer->bind();
-			_renderer->render(_models, _normalShader);
+			_renderer->render(_normalShader); // Renders all objects.
+
+			{
+				_terrainShader->useProgram();
+				_terrainShader->setValue(0, _camera->getViewMatrix());
+				_terrainShader->setValue(1, _camera->getProjectionMatrix());
+				_terrainShader->setValue(2, _terrainGenerator->getNumberOfTiles());
+				_renderer->renderTerrain(_terrainGenerator->getMesh(), _terrainGenerator->getNumberOfTiles());
+			}
 		}
 
 		{ // 2.0 Shadow memes
 			_shadowShader->useProgram();
 			
 			_shadowFramebuffer->bind();
-			_renderer->renderShadows(_models, _shadowShader, _shadowFramebuffer, _shadowCaster);
+			_renderer->renderShadows(_shadowShader, _shadowFramebuffer, _shadowCaster);
 		}
 
 		{ // 2.5 Use gaussian filter to blur shadows for lighting pass.
@@ -376,7 +384,7 @@ int Engine::run() {
 			_atmosphericScatteringShader->setValue(26, 1);
 			_skydome->getMeshes()[0]->getTextures()[0]->bind(0);
 			_geometryFramebuffer->getTexture(Framebuffer::TextureAttachment::positions)->bind(1);
-			_renderer->renderSingle(_skydome);
+			_renderer->renderSkydome(_skydome);
 		}
 
 		{	// Render guizmo for camera's currently selected entity. (model for now)
@@ -399,11 +407,37 @@ int Engine::run() {
 void Engine::_init() {
 	_initSDL();
 	_initGL();
+	_initGraphicalDependencies();
+	_initShaders();
+	_initFramebuffers();
 
+	_cubeMapTexture = _textureLoader->loadCubeMapTexture("skybox");
+
+	_camera = std::make_shared<Camera>();
+	_camera->pos = glm::vec3(0,0,0);
+
+	_renderer->enableGaussianForVSM(_shadowCaster);
+	
+	_initWorld();
+}
+
+void Engine::_initSDL() {
+	_window = std::make_unique<Window>("Memengine");
+}
+
+void Engine::_initGL() {
+	_renderer = std::make_unique<Renderer>(_window->getWindow());
+}
+
+void Engine::_initGraphicalDependencies() {
 	_textureLoader = std::make_unique<TextureLoader>();
 	_meshLoader = std::make_unique<MeshLoader>();
 	_modelHandler = std::make_unique<ModelHandler>();
-	
+	_terrainGenerator = std::make_unique<TerrainGenerator>();
+	_shadowCaster = std::make_shared<Shadowcaster>(4, 2048);
+}
+
+void Engine::_initShaders() {
 	_shadowShader = std::make_shared<ShaderProgram>("Shadow Pass");
 	_shadowShader->attachShader(ShaderProgram::ShaderType::VertexShader, "assets/shaders/shadowpass.vert")
 		.attachShader(ShaderProgram::ShaderType::GeometryShader, "assets/shaders/shadowpass.geom")
@@ -446,19 +480,25 @@ void Engine::_init() {
 		.attachShader(ShaderProgram::ShaderType::FragmentShader, "assets/shaders/fxaa.frag")
 		.finalize();
 
-	_atmosphericScatteringShader = std::make_shared<ShaderProgram>("FXAA Shader");
+	_atmosphericScatteringShader = std::make_shared<ShaderProgram>("AS-skyFromGround Shader");
 	_atmosphericScatteringShader->attachShader(ShaderProgram::ShaderType::VertexShader, "assets/shaders/AS-skyFromAtmosphere.vert")
 		.attachShader(ShaderProgram::ShaderType::FragmentShader, "assets/shaders/AS-skyFromAtmosphere.frag")
 		.finalize();
 
+	_terrainShader = std::make_shared<ShaderProgram>("Terrain Shader");
+	_terrainShader->attachShader(ShaderProgram::ShaderType::VertexShader, "assets/shaders/terrain.vert")
+		.attachShader(ShaderProgram::ShaderType::FragmentShader, "assets/shaders/terrain.frag")
+		.finalize();
+
+}
+
+void Engine::_initFramebuffers() {
 	_geometryFramebuffer = std::make_shared<Framebuffer>();
 	_geometryFramebuffer->createTexture(0, _window->getSize(), Texture::TextureFormat::RGBA32f) // Pos 0
 		.createTexture(1, _window->getSize(), Texture::TextureFormat::RGBA32f) // Normal 1
 		.createTexture(2, _window->getSize(), Texture::TextureFormat::RGBA32f) // Color 2
 		.createTexture(3, _window->getSize(), Texture::TextureFormat::Depth32f) // Depth 3
 		.finalize();
-
-	_shadowCaster = std::make_shared<Shadowcaster>(4, 2048);
 
 	auto shadowMapTex = std::make_shared<Texture>();
 	shadowMapTex->intializeVSMTex(glm::ivec2(_shadowCaster->getResolution()), _shadowCaster->numCascadeSplits);
@@ -470,29 +510,13 @@ void Engine::_init() {
 	_lightingFramebuffer = std::make_shared<Framebuffer>();
 	_lightingFramebuffer->createTexture(0, _window->getSize(), Texture::TextureFormat::RGBA32f)
 		.finalize();
-
-	_cubeMapTexture = _textureLoader->loadCubeMapTexture("skybox");
-
-	_camera = std::make_shared<Camera>();
-	_camera->pos = glm::vec3(0,0,0);
-
-	_renderer->enableGaussianForVSM(_shadowCaster);
-	
-	_initWorld();
 }
 
-void Engine::_initSDL() {
-	_window = std::make_unique<Window>("Memengine");
-}
-
-void Engine::_initGL() {
-	_renderer = std::make_unique<Renderer>(_window->getWindow());
-}
 void Engine::_initWorld() {
-	_modelHandler->createModel("plane.fbx")->setPosition(glm::vec3(0)).setScaling(glm::vec3(2000, 1, 2000));
+	//_modelHandler->createModel("plane.fbx")->setPosition(glm::vec3(0)).setScaling(glm::vec3(2000, 1, 2000));
 	//_modelHandler->createModel("magicBox.obj")->setPosition(glm::vec3(0, 10, -5)).setScaling(glm::vec3(2));
 	//_modelHandler->createModel("treeVersion4.fbx")->setPosition(glm::vec3(5, 0, 5)).setScaling(glm::vec3(2));
-	_modelHandler->createModel("isak_tecken.fbx")->setPosition(glm::vec3(0, 1, 0)).setScaling(glm::vec3(5));
+	//_modelHandler->createModel("isak_tecken.fbx")->setPosition(glm::vec3(0, 1, 0)).setScaling(glm::vec3(5));
 	auto fRand = [](float fMin, float fMax) {
 		float f = (float)rand() / RAND_MAX;
 		return fMin + f * (fMax - fMin);
@@ -506,7 +530,7 @@ void Engine::_initWorld() {
 				continue;
 			_modelHandler->createModel(treePaths[int(fRand(0, 3))])
 				->setPosition(glm::vec3(x * 30, 0, y * 30))
-				.setScaling(glm::vec3(1) * fRand(10, 15));
+				.setScaling(glm::vec3(15));
 		}
 	}
 
@@ -516,6 +540,8 @@ void Engine::_initWorld() {
 	//			glm::vec3(1, 0, 0)));
 	//	}
 	//}
+
+	_terrainGenerator->initialize();
 
 	_lights.push_back(std::make_shared<Pointlight>(glm::vec3(150, 50, 150),
 		glm::vec3(1,0,0)));
@@ -529,7 +555,7 @@ void Engine::_initWorld() {
 
 void Engine::_updatePointLights(float delta) {
 	static float angle = 0.f;
-	float angleOffset = (2.f * M_PI) / (float)_lights.size();
+	float angleOffset = (2.f * (float)M_PI) / (float)_lights.size();
 	float radius = 250.f;
 	float index = 0.f;
 	for (auto light : _lights) {

@@ -56,7 +56,7 @@ Renderer::~Renderer() {
 	SDL_GL_DeleteContext(Engine::getInstance()->getWindow());
 }
 
-void Renderer::render(const std::vector<std::shared_ptr<Model>>& models, const std::shared_ptr<ShaderProgram>& shader) {
+void Renderer::render(const std::shared_ptr<ShaderProgram> shader) {
 	// Write to depth, do depth test, cull back.
 	const auto& sizes = Engine::getInstance()->getWindow()->getSize();
 	glViewport(0, 0, sizes.x, sizes.y);
@@ -89,8 +89,8 @@ void Renderer::render(const std::vector<std::shared_ptr<Model>>& models, const s
 	//glEnable(GL_CULL_FACE);
 }
 
-void Renderer::renderShadows(const std::vector<std::shared_ptr<Model>>& models, const std::shared_ptr<ShaderProgram>& shader, const std::shared_ptr<Framebuffer>& fbo,
-	const std::shared_ptr<Shadowcaster>& caster) {
+void Renderer::renderShadows(const std::shared_ptr<ShaderProgram> shader, const std::shared_ptr<Framebuffer> fbo,
+	const std::shared_ptr<Shadowcaster> caster) {
 	// Write to depth, do depth test, cull front. Have depth clamp.
 	auto size = fbo->getTexture(0)->getSize();
 	glViewport(0, 0, size.x, size.y);
@@ -123,8 +123,8 @@ void Renderer::renderShadows(const std::vector<std::shared_ptr<Model>>& models, 
 	glDisable(GL_DEPTH_CLAMP);
 }
 
-void Renderer::gaussianFilter(const std::shared_ptr<Texture>& toBlur, const std::shared_ptr<Model>& quad, 
-	const std::shared_ptr<ShaderProgram>& gaussianShader) {
+void Renderer::gaussianFilter(const std::shared_ptr<Texture> toBlur, const std::shared_ptr<Model> quad, 
+	const std::shared_ptr<ShaderProgram> gaussianShader) {
 	// use viewport from shadow pass.
 	gaussianShader->useProgram();
 	gaussianShader->setValue(20, 0); // Texture location color_0.
@@ -147,7 +147,7 @@ void Renderer::gaussianFilter(const std::shared_ptr<Texture>& toBlur, const std:
 	}
 }
 
-void Renderer::renderFullScreenQuad(const std::shared_ptr<Model>& quad) {
+void Renderer::renderFullScreenQuad(const std::shared_ptr<Model> quad) {
 	// Write to depth, depth test, cull nothing.
 	const auto& sizes = Engine::getInstance()->getWindow()->getSize();
 	glViewport(0, 0, sizes.x, sizes.y); // change viewport back to screen size.
@@ -161,7 +161,7 @@ void Renderer::renderFullScreenQuad(const std::shared_ptr<Model>& quad) {
 	glBindVertexArray(0);
 }
 
-void Renderer::postProcessFXAA(const std::shared_ptr<Model>& quad) {
+void Renderer::postProcessFXAA(const std::shared_ptr<Model> quad) {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	glDepthFunc(GL_ALWAYS);
@@ -175,29 +175,21 @@ void Renderer::postProcessFXAA(const std::shared_ptr<Model>& quad) {
 	//glCullFace(GL_BACK);
 	// Depthfunc changes in cubemap rendering.
 }
- // fix dis
-void Renderer::renderCubemap(const std::shared_ptr<Model>& cubemapModel) {
-	// Read from depth, do depth test (equal), cull nothing.
-	glDepthFunc(GL_LEQUAL);
-	glDepthMask(GL_FALSE);
 
-	glBindVertexArray(cubemapModel->getMeshes()[0]->getVAO());
-	glDrawElements(GL_TRIANGLES, (GLsizei)cubemapModel->getMeshes()[0]->getIndices().size(), GL_UNSIGNED_INT, nullptr);
+void Renderer::renderTerrain(const std::shared_ptr<Mesh> terrain, const int& instanceCount) {
+
+
+	glBindVertexArray(terrain->getVAO());
+	glDrawElementsInstanced(GL_TRIANGLES, (GLsizei)terrain->getIndices().size(), GL_UNSIGNED_INT, 0, instanceCount);
+
 	glBindVertexArray(0);
-
-	glDepthFunc(GL_LESS);
-	glDepthMask(GL_TRUE);
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
 }
 
-void Renderer::renderSingle(const std::shared_ptr<Model>& model) {
+void Renderer::renderSkydome(const std::shared_ptr<Model> model) {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glDepthFunc(GL_LEQUAL);
 	glDepthMask(GL_FALSE);
 	glDisable(GL_CULL_FACE);
-	//glDisable(GL_CULL_FACE);
-	//glDepthMask(GL_FALSE);
 
 	glBindVertexArray(model->getMeshes()[0]->getVAO());
 	glDrawElements(GL_TRIANGLES, (GLsizei)model->getMeshes()[0]->getIndices().size(), GL_UNSIGNED_INT, nullptr);
@@ -207,10 +199,9 @@ void Renderer::renderSingle(const std::shared_ptr<Model>& model) {
 	glDepthMask(GL_TRUE);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
-	//glDepthMask(GL_TRUE);
 }
 
-void Renderer::showGuizmo(const std::shared_ptr<Camera>& camera) {
+void Renderer::showGuizmo(const std::shared_ptr<Camera> camera) {
 	auto currentlySelected = camera->currentTarget.lock();
 	if (currentlySelected == nullptr)
 		return;
@@ -294,7 +285,7 @@ void Renderer::showGuizmo(const std::shared_ptr<Camera>& camera) {
 }
 
 
-void Renderer::enableGaussianForVSM(const std::shared_ptr<Shadowcaster>& caster) {
+void Renderer::enableGaussianForVSM(const std::shared_ptr<Shadowcaster> caster) {
 	_pingPongBuffers[0] = std::make_shared<Framebuffer>("Ping Pong 0");
 	_pingPongBuffers[1] = std::make_shared<Framebuffer>("Ping Pong 1");
 	_pingPongTextures[0] = std::make_shared<Texture>();
