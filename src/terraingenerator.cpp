@@ -1,7 +1,8 @@
 #include "terraingenerator.hpp"
 
 TerrainGenerator::TerrainGenerator(){
-	_numPatches = 5;
+	_numPatches = 100;
+	_tileSize = 1.f;
 }
 
 TerrainGenerator::~TerrainGenerator(){
@@ -28,10 +29,10 @@ void TerrainGenerator::initialize() {
 	quad.vertices[2].normal = glm::vec3(0, 1, 0);
 	quad.vertices[3].normal = glm::vec3(0, 1, 0);
 
-	quad.vertices[0].pos = glm::vec3(-1, 0, -1);
-	quad.vertices[1].pos = glm::vec3(-1, 0, 1);
-	quad.vertices[2].pos = glm::vec3(1, 0, 1);
-	quad.vertices[3].pos = glm::vec3(1, 0, -1);
+	quad.vertices[0].pos = glm::vec3(-0.5, 0, -0.5);
+	quad.vertices[1].pos = glm::vec3(-0.5, 0, 0.5);
+	quad.vertices[2].pos = glm::vec3(0.5, 0, 0.5);
+	quad.vertices[3].pos = glm::vec3(0.5, 0, -0.5);
 
 	quad.vertices[0].tangent = glm::vec3(1, 0, 0);
 	quad.vertices[1].tangent = glm::vec3(1, 0, 0);
@@ -51,13 +52,10 @@ void TerrainGenerator::initialize() {
 	std::vector<glm::vec3> posOffsets;
 	glm::vec2 uvOffsets = glm::vec2(0, 0);
 	float offsetIncrement = 1.f / (float)(_numPatches * _numPatches);
-	for (int x = -_numPatches; x < _numPatches; x++) {
-		for (int z = -_numPatches; z < _numPatches; z++) {
-			posOffsets.push_back(glm::vec3(uvOffsets.x, 0, uvOffsets.y));
-			uvOffsets.y += offsetIncrement;
+	for (float x = 0; x < _numPatches; x++) {
+		for (float z = 0; z < _numPatches; z++) {
+			posOffsets.push_back(glm::vec3(x * offsetIncrement, 0, z * offsetIncrement));
 		}
-		uvOffsets.x += offsetIncrement;
-		printf("%f, %f\n", uvOffsets.x, uvOffsets.y);
 	}
 	_mesh = std::make_shared<Mesh>(vertices, indices);
 	_mesh->setupInstancedBuffer(posOffsets);

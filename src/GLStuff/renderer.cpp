@@ -178,9 +178,8 @@ void Renderer::postProcessFXAA(const std::shared_ptr<Model> quad) {
 
 void Renderer::renderTerrain(const std::shared_ptr<Mesh> terrain, const int& instanceCount) {
 
-
 	glBindVertexArray(terrain->getVAO());
-	glDrawElementsInstanced(GL_TRIANGLES, (GLsizei)terrain->getIndices().size(), GL_UNSIGNED_INT, 0, instanceCount);
+	glDrawElementsInstanced(GL_TRIANGLES, (GLsizei)terrain->getIndices().size(), GL_UNSIGNED_INT, 0, (GLsizei)instanceCount);
 
 	glBindVertexArray(0);
 }

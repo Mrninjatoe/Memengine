@@ -53,6 +53,7 @@ class Engine {
 		void _initGraphicalDependencies();
 		void _initShaders();
 		void _initFramebuffers();
+		void _initMemeTextures();
 		void _initWorld();
 		void _updatePointLights(float delta);
 		static Engine* _instance;
@@ -77,7 +78,7 @@ class Engine {
 		std::shared_ptr<Framebuffer> _shadowFramebuffer;
 		std::shared_ptr<Framebuffer> _geometryFramebuffer;
 		std::shared_ptr<Framebuffer> _lightingFramebuffer;
-		std::shared_ptr<Texture> _cubeMapTexture;
+		std::shared_ptr<Texture> _terrainTexture;
 
 		std::shared_ptr<Model> _quad;
 		std::shared_ptr<Model> _cubeMapModel;

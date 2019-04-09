@@ -192,7 +192,7 @@ int Engine::run() {
 				ImGui::SliderFloat("Lambda", &_shadowCaster->lambda, 0.f, 1.0f);
 				ImGui::SliderFloat("Min Distance", &_shadowCaster->minDistance, 0.f, 1.0f);
 				ImGui::SliderFloat("Max Distance", &_shadowCaster->maxDistance, 0.f, 1.0f);
-			} 
+			}
 			{ // VSM
 				ImGui::Text("VSM Attributes");
 				ImGui::SliderFloat("lowVSMValue", &lowVSMValue, 0.f, 1.0f);
@@ -227,6 +227,10 @@ int Engine::run() {
 			{ // World picking stuff
 				ImGui::Text("Generic Entity Control");
 				ImGui::Checkbox("Enable World Picking", &enablePicking);
+			} 
+			{
+				ImGui::Text("Terrain Attributes");
+				ImGui::SliderFloat("tileSize", &_terrainGenerator->getTileSize(), 0.1f, 100.f);
 			}
 			ImGui::End();
 			_camera->enablePicking = enablePicking;
@@ -258,7 +262,10 @@ int Engine::run() {
 				_terrainShader->useProgram();
 				_terrainShader->setValue(0, _camera->getViewMatrix());
 				_terrainShader->setValue(1, _camera->getProjectionMatrix());
-				_terrainShader->setValue(2, _terrainGenerator->getNumberOfTiles());
+				_terrainShader->setValue(2, (float)_terrainGenerator->getNumberOfTiles());
+				_terrainShader->setValue(3, _terrainGenerator->getTileSize());
+				_terrainShader->setValue(20, 0);
+				_terrainTexture->bind(0);
 				_renderer->renderTerrain(_terrainGenerator->getMesh(), _terrainGenerator->getNumberOfTiles());
 			}
 		}
@@ -410,8 +417,7 @@ void Engine::_init() {
 	_initGraphicalDependencies();
 	_initShaders();
 	_initFramebuffers();
-
-	_cubeMapTexture = _textureLoader->loadCubeMapTexture("skybox");
+	_initMemeTextures();
 
 	_camera = std::make_shared<Camera>();
 	_camera->pos = glm::vec3(0,0,0);
@@ -510,6 +516,10 @@ void Engine::_initFramebuffers() {
 	_lightingFramebuffer = std::make_shared<Framebuffer>();
 	_lightingFramebuffer->createTexture(0, _window->getSize(), Texture::TextureFormat::RGBA32f)
 		.finalize();
+}
+
+void Engine::_initMemeTextures() {
+	_terrainTexture = _textureLoader->loadTexture("terrainTextures/heightMapClap.png");
 }
 
 void Engine::_initWorld() {

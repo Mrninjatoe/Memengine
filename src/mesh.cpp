@@ -86,8 +86,9 @@ void Mesh::setupInstancedBuffer(const std::vector<glm::vec3>& offsets) {
 	glBindBuffer(GL_ARRAY_BUFFER, _extraBuffer);
 	glBufferData(GL_ARRAY_BUFFER, offsets.size() * sizeof(glm::vec3), &offsets[0], GL_DYNAMIC_DRAW); // Might change to stream_draw later. :)
 
+	auto vec3Size = sizeof(glm::vec3);
 	glEnableVertexAttribArray((GLint)BindingLocation::terrainOffset);
-	glVertexAttribPointer((GLint)BindingLocation::terrainOffset, 3, GL_FLOAT, GL_FALSE, (GLsizei)sizeof(glm::vec3), (GLvoid*)0);
+	glVertexAttribPointer((GLint)BindingLocation::terrainOffset, 3, GL_FLOAT, GL_FALSE, (GLsizei)vec3Size, (GLvoid*)0);
 	glVertexAttribDivisor((GLint)BindingLocation::terrainOffset, 1);
 
 	glBindVertexArray(0);
