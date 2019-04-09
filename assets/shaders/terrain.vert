@@ -24,8 +24,9 @@ void main(){
 	vNormal = normal;
 	vec2 newUV = vPos.xz / (tilesPerAxis * tileSize); // not sure lamo
 	float height = texture(lilTex, newUV).r;
+	vPos.xz -= tileSize * tilesPerAxis * 0.5f;
 	vPos.y = height * tileSize * 10;
 	vUV = newUV;
-	vColor = color;
+	vColor = height * vec3(0.33203125, 0.53125, 0.23046875);
 	gl_Position = p * v * vec4(vPos, 1);
 }

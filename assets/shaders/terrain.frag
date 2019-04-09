@@ -15,7 +15,7 @@ layout(location = 20) uniform sampler2D lilTex;
 void main(){
 	outPos = vec4(vPos, 1);
 	outNormal = vec4(vNormal, 0);
-	outColor = texture(lilTex, vUV);
+	outColor = vec4(vColor, 1);
 
 	
 	// outDepth = gl_FragCoord.z Don't need since depth/stencil defined.

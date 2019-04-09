@@ -1,7 +1,7 @@
 #include "terraingenerator.hpp"
 
 TerrainGenerator::TerrainGenerator(){
-	_numPatches = 100;
+	_numPatches = 96;
 	_tileSize = 1.f;
 }
 
@@ -52,11 +52,11 @@ void TerrainGenerator::initialize() {
 	std::vector<glm::vec3> posOffsets;
 	glm::vec2 uvOffsets = glm::vec2(0, 0);
 	float offsetIncrement = 1.f / (float)(_numPatches * _numPatches);
-	for (float x = 0; x < _numPatches; x++) {
-		for (float z = 0; z < _numPatches; z++) {
+	float axisMax = _numPatches * 0.5f;
+	for (float x = 0; x < _numPatches; x++)
+		for (float z = 0; z < _numPatches; z++)
 			posOffsets.push_back(glm::vec3(x * offsetIncrement, 0, z * offsetIncrement));
-		}
-	}
+
 	_mesh = std::make_shared<Mesh>(vertices, indices);
 	_mesh->setupInstancedBuffer(posOffsets);
 }
