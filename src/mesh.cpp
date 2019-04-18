@@ -104,6 +104,6 @@ void Mesh::updateInstancedBufferOffset(const glm::ivec2& offset, const glm::mat4
 }
 
 
-void Mesh::addTexture(const std::shared_ptr<Texture>& tex) {
+void Mesh::addTexture(const std::shared_ptr<Texture> tex) {
 	_textures.push_back(tex);
 }

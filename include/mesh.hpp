@@ -42,7 +42,7 @@ public:
 	Mesh(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices);
 	virtual ~Mesh();
 
-	void addTexture(const std::shared_ptr<Texture>& tex);
+	void addTexture(const std::shared_ptr<Texture> tex);
 	void setupInstancedBuffer(const std::vector<glm::mat4>& matrices);
 	void setupInstancedBuffer(const std::vector<glm::vec3>& offsets);
 	void updateInstancedBufferFull(const std::vector<glm::mat4>& matrices);

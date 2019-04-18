@@ -13,6 +13,7 @@ Framebuffer::Framebuffer(const std::string& name) : _name(name) {
 }
 
 Framebuffer::~Framebuffer() {
+	_textureAttachments.clear();
 	glDeleteFramebuffers(1, &_fbo);
 }
 
@@ -45,7 +46,7 @@ Framebuffer& Framebuffer::createTexture(const unsigned int& pos, const glm::ivec
 	return *this;
 }
 
-Framebuffer& Framebuffer::attachTexture(const unsigned int& pos, const std::shared_ptr<Texture>& tex) {
+Framebuffer& Framebuffer::attachTexture(const unsigned int& pos, const std::shared_ptr<Texture> tex) {
 	glBindFramebuffer(GL_FRAMEBUFFER, _fbo);
 	glFramebufferTexture(GL_FRAMEBUFFER, static_cast<GLenum>(GL_COLOR_ATTACHMENT0 + pos), tex->getID(), 0);
 

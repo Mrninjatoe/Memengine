@@ -11,7 +11,7 @@ public:
 	Model(const std::string& identifierName);
 	virtual ~Model();
 	void addMesh(const std::shared_ptr<Mesh> inMesh);
-	std::vector<std::shared_ptr<Mesh>>& getMeshes();
+	std::vector<std::shared_ptr<Mesh>> getMeshes();
 	glm::mat4 getModelMatrix() { return glm::translate(_pos) * glm::mat4_cast(_orientation) * glm::scale(_scale); }
 	Model& setPosition(const glm::vec3& pos) {
 		_pos = pos;

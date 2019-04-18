@@ -50,8 +50,8 @@ Renderer::Renderer(SDL_Window* window){
 Renderer::~Renderer() {
 	printf("~Renderer()\n");
 	for (unsigned int i = 0; i < 2; i++) {
-		_pingPongBuffers[i].reset();
 		_pingPongTextures[i].reset();
+		_pingPongBuffers[i].reset();
 	}
 	SDL_GL_DeleteContext(Engine::getInstance()->getWindow());
 }
@@ -178,8 +178,12 @@ void Renderer::postProcessFXAA(const std::shared_ptr<Model> quad) {
 
 void Renderer::renderTerrain(const std::shared_ptr<Mesh> terrain, const int& instanceCount) {
 
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
 	glBindVertexArray(terrain->getVAO());
 	glDrawElementsInstanced(GL_TRIANGLES, (GLsizei)terrain->getIndices().size(), GL_UNSIGNED_INT, 0, (GLsizei)instanceCount);
+
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 	glBindVertexArray(0);
 }

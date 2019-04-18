@@ -11,7 +11,7 @@ public:
 	Shadowcaster(const int& numOfSplits, const int& resolution);
 	virtual ~Shadowcaster();
 	void update(float dt);
-	void createCascadeSplits(const std::shared_ptr<Camera>& playerCamera);
+	void createCascadeSplits(const std::shared_ptr<Camera> playerCamera);
 	inline glm::vec3 getPos() { return _pos; }
 	inline std::vector<glm::mat4>& getViewProjMatrices() { return _cascadedViewProjs; }
 	inline std::vector<float>& getCascadedSplits() { return _cascadedSplits; }

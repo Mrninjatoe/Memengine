@@ -6,7 +6,8 @@ ModelHandler::ModelHandler() {
 }
 
 ModelHandler::~ModelHandler() {
-	
+	for (auto tuple : _models)
+		tuple.second.clear();
 }
 
 std::shared_ptr<Model> ModelHandler::createModel(const std::string& meshPath) {

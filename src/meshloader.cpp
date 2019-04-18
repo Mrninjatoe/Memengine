@@ -17,10 +17,8 @@ MeshLoader::~MeshLoader() {
 std::shared_ptr<Model> MeshLoader::loadMesh(const std::string& fileName){
 	std::string filePath = "assets/models/" + fileName;
 	auto meshAlreadyExists = _models.count(fileName);
-	if (meshAlreadyExists) {
-		printf("Mesh already exists!\n");
+	if (meshAlreadyExists) 
 		return std::make_shared<Model>(_models[fileName]);
-	}
 	
 	Assimp::Importer importer;
 
@@ -40,7 +38,6 @@ std::shared_ptr<Model> MeshLoader::loadMesh(const std::string& fileName){
 
 // TO-DO: Fix this class and load in meshes.
 void MeshLoader::_processNode(aiNode* node, const aiScene* scene, const std::string& fileName) {
-	printf("mesh\n");
 	for (unsigned int i = 0; i < node->mNumMeshes; i++) {
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
 		_models[fileName].addMesh(_processMesh(mesh, scene, fileName));

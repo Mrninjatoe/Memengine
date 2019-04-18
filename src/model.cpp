@@ -18,7 +18,7 @@ void Model::addMesh(const std::shared_ptr<Mesh> inMesh) {
 	_meshes.push_back(inMesh);
 }
 
-std::vector<std::shared_ptr<Mesh>>& Model::getMeshes() {
+std::vector<std::shared_ptr<Mesh>> Model::getMeshes() {
 	return _meshes;
 }
 

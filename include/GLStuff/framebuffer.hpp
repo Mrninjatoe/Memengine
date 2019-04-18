@@ -23,7 +23,7 @@ public:
 	Framebuffer& bind(const GLenum& io = GL_FRAMEBUFFER);
 	Framebuffer& createTexture(const unsigned int& pos, const glm::ivec2& size, 
 		const Texture::TextureFormat& format, const bool& wantArray = false);
-	Framebuffer& attachTexture(const unsigned int& pos, const std::shared_ptr<Texture>& tex);
+	Framebuffer& attachTexture(const unsigned int& pos, const std::shared_ptr<Texture> tex);
 	std::shared_ptr<Texture> getTexture(const unsigned int& pos) {
 		return _textureAttachments[pos];
 	}

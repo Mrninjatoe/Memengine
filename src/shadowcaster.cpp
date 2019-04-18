@@ -23,7 +23,7 @@ numCascadeSplits(numSplits), _resolution(resolution) {
 }
 
 Shadowcaster::~Shadowcaster(){
-	delete _intermediateCascadeSplits;
+	delete[] _intermediateCascadeSplits;
 	_cascadedSplits.clear();
 	_cascadedViewProjs.clear();
 }
@@ -41,7 +41,7 @@ void Shadowcaster::update(float dt) {
 	}
 }
 
-void Shadowcaster::createCascadeSplits(const std::shared_ptr<Camera>& playerCamera) {
+void Shadowcaster::createCascadeSplits(const std::shared_ptr<Camera> playerCamera) {
 	// 4 = max splits, should make a constant.
 	{
 		float nearClip = playerCamera->zNear; // curr camera

@@ -12,24 +12,33 @@
 #include "shadowcaster.hpp"
 #include "modelhandler.hpp"
 #include "terraingenerator.hpp"
+#include "world.hpp"
 
 class Engine {
 	public:
 		Engine();
 		virtual ~Engine() {
 			printf("Starting deletion of Members in Engine!\n");
+			_world.reset();
 			_camera.reset();
-			_textureLoader.reset();
-			_meshLoader.reset();
 			_shadowCaster.reset();
 			_terrainGenerator.reset();
+			_shadowShader.reset();
+			_atmosphericScatteringShader.reset();
+			_terrainShader.reset();
+			_terrainHeightTexture.reset();
+			_terrainDiffuseTexture.reset();
+			
 			for (auto light : _lights) {
 				light.reset();
 			}
-			
+
+			_meshLoader.reset();
+			_models.clear();
+			_modelHandler.reset();
 			_renderer.reset();
 			_window.reset();
-			_models.clear();
+			_textureLoader.reset();
 			printf("Done deleting member variable for the Engine!\n");
 		}
 
@@ -64,6 +73,7 @@ class Engine {
 		std::unique_ptr<MeshLoader> _meshLoader;
 		std::unique_ptr<ModelHandler> _modelHandler;
 		std::unique_ptr<TerrainGenerator> _terrainGenerator;
+		std::unique_ptr<World> _world;
 
 		std::shared_ptr<ShaderProgram> _shadowShader;
 		std::shared_ptr<ShaderProgram> _cShadowDebugShader;
@@ -78,7 +88,8 @@ class Engine {
 		std::shared_ptr<Framebuffer> _shadowFramebuffer;
 		std::shared_ptr<Framebuffer> _geometryFramebuffer;
 		std::shared_ptr<Framebuffer> _lightingFramebuffer;
-		std::shared_ptr<Texture> _terrainTexture;
+		std::shared_ptr<Texture> _terrainHeightTexture;
+		std::shared_ptr<Texture> _terrainDiffuseTexture;
 
 		std::shared_ptr<Model> _quad;
 		std::shared_ptr<Model> _cubeMapModel;

@@ -231,13 +231,16 @@ int Engine::run() {
 			{
 				ImGui::Text("Terrain Attributes");
 				ImGui::SliderFloat("tileSize", &_terrainGenerator->getTileSize(), 0.1f, 100.f);
+				ImGui::SliderFloat("tileHeight", &_terrainGenerator->getTileHeight(), 0.1f, 100.f);
 			}
 			ImGui::End();
 			_camera->enablePicking = enablePicking;
 			_shadowCaster->makeStatic(cascadeIsStatic);
 		}
 
+		_world->update(deltaTime);
 		_camera->update(deltaTime);
+		_terrainGenerator->pickAgainstTerrain(_camera);
 		_shadowCaster->update(deltaTime);
 		_shadowCaster->createCascadeSplits(_camera); // Cascading shadow maps split per frame...
 		_modelHandler->updateInstancedModels();
@@ -264,8 +267,12 @@ int Engine::run() {
 				_terrainShader->setValue(1, _camera->getProjectionMatrix());
 				_terrainShader->setValue(2, (float)_terrainGenerator->getNumberOfTiles());
 				_terrainShader->setValue(3, _terrainGenerator->getTileSize());
+				_terrainShader->setValue(4, _terrainGenerator->getTileHeight());
+				_terrainShader->setValue(5, _terrainGenerator->getSelectedTile());
 				_terrainShader->setValue(20, 0);
-				_terrainTexture->bind(0);
+				_terrainShader->setValue(21, 1);
+				_terrainHeightTexture->bind(0);
+				_terrainDiffuseTexture->bind(1);
 				_renderer->renderTerrain(_terrainGenerator->getMesh(), _terrainGenerator->getNumberOfTiles());
 			}
 		}
@@ -397,12 +404,12 @@ int Engine::run() {
 		{	// Render guizmo for camera's currently selected entity. (model for now)
 			_renderer->showGuizmo(_camera);
 		}
-
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		SDL_GL_SwapWindow(_window->getWindow());
 		ImGui::EndFrame();
 	}
+
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplSDL2_Shutdown();
 	ImGui::DestroyContext();
@@ -519,10 +526,12 @@ void Engine::_initFramebuffers() {
 }
 
 void Engine::_initMemeTextures() {
-	_terrainTexture = _textureLoader->loadTexture("terrainTextures/heightMapClap.png");
+	_terrainHeightTexture = _textureLoader->loadTexture("terrainTextures/forestHeight.png");
+	_terrainDiffuseTexture = _textureLoader->loadTexture("terrainTextures/forestDiffuse.png");
 }
 
 void Engine::_initWorld() {
+	_world = std::make_unique<World>();
 	//_modelHandler->createModel("plane.fbx")->setPosition(glm::vec3(0)).setScaling(glm::vec3(2000, 1, 2000));
 	//_modelHandler->createModel("magicBox.obj")->setPosition(glm::vec3(0, 10, -5)).setScaling(glm::vec3(2));
 	//_modelHandler->createModel("treeVersion4.fbx")->setPosition(glm::vec3(5, 0, 5)).setScaling(glm::vec3(2));
@@ -534,7 +543,7 @@ void Engine::_initWorld() {
 
 	const std::string treePaths[3] = {"lowPolyTree7.fbx", "lowPolyTree8.fbx", "lowPolyTree9.fbx"};
 
-	for (int y = -10; y < 10; y++) {
+	/*for (int y = -10; y < 10; y++) {
 		for (int x = -10; x < 10; x++) {
 			if ((y >= -2 && y < 2) || (x >= -2 && x < 2))
 				continue;
@@ -542,7 +551,7 @@ void Engine::_initWorld() {
 				->setPosition(glm::vec3(x * 30, 0, y * 30))
 				.setScaling(glm::vec3(15));
 		}
-	}
+	}*/
 
 	//for (int y = -2; y < 2; y++) {
 	//	for (int x = -2; x < 2; x++) {
@@ -552,9 +561,12 @@ void Engine::_initWorld() {
 	//}
 
 	_terrainGenerator->initialize();
+	_world->addEntity("Big Boi");
+	_world->addEntity("Big Boi2");
+	_world->addEntity("Big Boi3");
 
-	_lights.push_back(std::make_shared<Pointlight>(glm::vec3(150, 50, 150),
-		glm::vec3(1,0,0)));
+	//_lights.push_back(std::make_shared<Pointlight>(glm::vec3(150, 50, 150),
+	//	glm::vec3(1,0,0)));
 
 	_quad = _meshLoader->getFullscreenQuad();
 	_cubeMapModel = _meshLoader->loadMesh("cubeMapBox.fbx");

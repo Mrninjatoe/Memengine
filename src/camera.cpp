@@ -44,6 +44,48 @@ glm::mat4 Camera::getProjectionMatrix() {
 	return glm::perspective(glm::radians(fov), aspectRatio, zNear, zFar);
 }
 
+bool Camera::pickAgainstQuad(const glm::vec3 vertices[6], const glm::vec3& quadNormal) {
+	glm::ivec2 temp = mousePos;
+	SDL_GetMouseState(&temp.x, &temp.y);
+	auto sizes = Engine::getInstance()->getWindow()->getSize();
+	glm::vec4 rayClip = glm::vec4((temp.x * 2.f) / sizes.x - 1.f, 1.f - (2.f * temp.y) / sizes.y, -1.f, 1.f);
+	glm::vec4 rayEye = glm::inverse(this->getProjectionMatrix()) * rayClip;
+	rayEye.z = -1; // Forward in world space.
+	rayEye.w = 0.f; // not a point.
+	glm::vec3 rayWorld = glm::normalize(glm::inverse(this->getViewMatrix()) * rayEye);
+
+	auto pickAgainstTriangle = [&](int offset) {
+		glm::vec3 e0 = vertices[1 + offset] - vertices[0 + offset];
+		glm::vec3 e1 = vertices[2 + offset] - vertices[0 + offset];
+		glm::vec3 pVec = glm::cross(rayWorld, e1);
+		float det = glm::dot(e0, pVec);
+		if (fabs(det) < 0.0001f)
+			return false;
+
+		float invDet = 1.f / det;
+		glm::vec3 tVec = this->pos - vertices[0 + offset];
+		float u = glm::dot(tVec, pVec) * invDet;
+		if (u < 0 || u > 1)
+			return false;
+
+		glm::vec3 qVec = glm::cross(tVec, e0);
+		float v = glm::dot(rayWorld, qVec) * invDet;
+		if (v < 0 || u + v > 1)
+			return false;
+
+		return true;
+	};
+
+	int firstTrisOffset = 0;
+	int secondTrisOffset = 3;
+
+	bool hitTriangle = pickAgainstTriangle(firstTrisOffset);
+	if (!hitTriangle)
+		hitTriangle = pickAgainstTriangle(secondTrisOffset);
+
+	return hitTriangle;
+}
+
 void Camera::_warpMouseInWindow() {
 	glm::ivec2 dm = mousePos;
 	SDL_GetMouseState(&mousePos.x, &mousePos.y);

@@ -11,6 +11,7 @@ public:
 	void update(float deltaTime);
 	glm::mat4 getViewMatrix();
 	glm::mat4 getProjectionMatrix();
+	bool pickAgainstQuad(const glm::vec3 vertices[6], const glm::vec3& quadNormal);
 
 	glm::vec3 pos;
 	glm::vec3 cameraTarget;
